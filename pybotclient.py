@@ -1,9 +1,11 @@
+# coding=UTF-8
 import socket
 import sys
 import select
 import termios
 import tty
 import signal
+import os
 
 
 class TimeoutException(Exception):
@@ -47,6 +49,7 @@ if __name__ == "__main__":
         else:
             s.sendall(key)
         print key
+        os.system('clear')
     data = s.recv(1024)
     s.close()
     print('Received', repr(data))
