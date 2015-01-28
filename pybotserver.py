@@ -15,8 +15,6 @@ if __name__ == "__main__":
         print('Connected by', addr)
         data = conn.recv(1024)
         print data
-        if data == 'exit' or not data:
+        if data == 'exit':
             break
-        else:
-            os.system('clear')
     conn.close()

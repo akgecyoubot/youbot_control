@@ -6,7 +6,6 @@ import select
 import termios
 import tty
 import signal
-import os
 
 
 class TimeoutException(Exception):
@@ -46,7 +45,7 @@ if __name__ == "__main__":
         print "Connection failed, sorry!"
         exit()
     else:
-        print "Connected to %s:%i".format(host, port)
+        print "Connected to {}:{}".format(host, port)
     while True:
         key = getKey()
         if key == 'q' or key == 'e':
@@ -54,6 +53,5 @@ if __name__ == "__main__":
             break
         else:
             s.sendall(key)
-        print key
-        os.system('clear')
+        print key,
     s.close()
