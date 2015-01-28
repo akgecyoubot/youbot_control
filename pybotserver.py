@@ -11,8 +11,8 @@ if __name__ == "__main__":
     s.bind((host, port))
     s.listen(1)
     conn, addr = s.accept()
+    print('Connected by', addr)
     while True:
-        print('Connected by', addr)
         data = conn.recv(1024)
         print data
         if data == 'exit':
