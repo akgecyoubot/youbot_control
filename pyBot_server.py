@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print('Connected by', addr)
     while True:
         data = conn.recv(1024)
-        if not data:
+        print data
+        if data == 'exit' of not data:
             break
-        # conn.sendall(data)
     conn.close()

@@ -11,6 +11,9 @@ class TimeoutException(Exception):
 
 
 def getKey():
+    """
+    Функция, возвращающая нажатую клавишу
+    """
     def timeout_handler(signum, frame):
         raise TimeoutException()
 
@@ -39,8 +42,8 @@ if __name__ == "__main__":
     s.connect((host, port))
     while True:
         key = getKey()
-        if key == 'q':
-            exit()
+        if key == 'q' or key == 'e':
+            s.sendall('exit')
         else:
             s.sendall(key)
         print key
