@@ -1,4 +1,8 @@
+#!/usr/bin/python2
+# coding=UTF-8
+
 import socket
+import os
 
 if __name__ == "__main__":
     host = ''
@@ -7,10 +11,12 @@ if __name__ == "__main__":
     s.bind((host, port))
     s.listen(1)
     conn, addr = s.accept()
-    print('Connected by', addr)
     while True:
+        print('Connected by', addr)
         data = conn.recv(1024)
         print data
-        if data == 'exit' of not data:
+        if data == 'exit' or not data:
             break
+        else:
+            os.system('clear')
     conn.close()

@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 # coding=UTF-8
 import socket
 import sys
@@ -13,9 +14,7 @@ class TimeoutException(Exception):
 
 
 def getKey():
-    """
-    Функция, возвращающая нажатую клавишу
-    """
+    """Функция считывает нажатую клавишу и возвращает её в виде строки"""
     def timeout_handler(signum, frame):
         raise TimeoutException()
 
@@ -41,15 +40,20 @@ if __name__ == "__main__":
     host = '172.22.21.225'  # KUKA youBot IP address
     port = 12345  # The same port as used by the server
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
+    try:
+        s.connect((host, port))
+    except:
+        print "Connection failed, sorry!"
+        exit()
+    else:
+        print "Connected to %s:%i".format(host, port)
     while True:
         key = getKey()
         if key == 'q' or key == 'e':
             s.sendall('exit')
+            break
         else:
             s.sendall(key)
         print key
         os.system('clear')
-    data = s.recv(1024)
     s.close()
-    print('Received', repr(data))
