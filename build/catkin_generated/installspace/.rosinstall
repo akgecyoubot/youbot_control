@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/youbot/GitHub/pybotserver/install/setup.sh
