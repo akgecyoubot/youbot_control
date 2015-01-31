@@ -1,6 +1,0 @@
-/home/youbot/GitHub/pybotserver/build/CMakeFiles/clean_test_results.dir
-/home/youbot/GitHub/pybotserver/build/CMakeFiles/doxygen.dir
-/home/youbot/GitHub/pybotserver/build/gtest/CMakeFiles/gtest.dir
-/home/youbot/GitHub/pybotserver/build/gtest/CMakeFiles/gtest_main.dir
-/home/youbot/GitHub/pybotserver/build/CMakeFiles/run_tests.dir
-/home/youbot/GitHub/pybotserver/build/CMakeFiles/tests.dir
