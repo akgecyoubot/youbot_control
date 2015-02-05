@@ -19,9 +19,10 @@ class JoypadControlNode(object):
         rospy.Subscriber("joy", Joy, self.update_data)
 
     def convert_joy_to_velocity(self, data):
-        u"""Преобразует информацию с джойстика и возвращает вектор скорости."""
-        if data.buttons[10] or data.buttons[9]:
-            rospy.signal_shutdown(u"До свидиния!")
+        u"""Преобразует данные с джойстика и возвращает скорость, типа Twist.
+
+        data - данные с джойстика, типа Joy
+        """
         velocity = Twist()
         velocity.linear.x = data.axes[1] / 4.0
         velocity.linear.y = data.axes[0] / 4.0
@@ -30,11 +31,16 @@ class JoypadControlNode(object):
         return velocity
 
     def update_data(self, data):
-        u"""Обновляет скорость при поступлении данных с джойстика."""
+        u""" Обновляет скорость при поступлении данных с джойстика.
+
+        Запускается каждый раз при получении данных с джойстика
+        """
+        if data.buttons[10] or data.buttons[9]:
+            rospy.signal_shutdown(u"До свидиния!")
         self.velocity = self.convert_joy_to_velocity(data)
 
     def run(self):
-        u"""Публикует сообщения по топику cmd_vel."""
+        u"""Запускает Node и публикует сообщения по топику cmd_vel."""
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.pub.publish(N.velocity)
