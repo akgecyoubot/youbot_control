@@ -27,7 +27,10 @@ class JoypadControlNode(object):
         """
         if data.buttons[10] or data.buttons[9]:
             rospy.signal_shutdown(u"До свидиния!")
-        self.velocity.linear.x = max(abs(data.axes[1]), abs(data.axes[5])) / 2.0
+        if abs(data.axes[1]) > abs(data.axes[5]):
+            self.velocity.linear.x = data.axes[1]
+        else:
+            self.velocity.linear.x = data.axes[5]
         self.velocity.linear.y = data.axes[0] / 2.0
         self.velocity.angular.z = data.axes[4] / 2.0
 
