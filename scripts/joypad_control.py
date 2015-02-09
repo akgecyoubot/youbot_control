@@ -14,39 +14,32 @@ class JoypadControlNode(object):
     def __init__(self):
         u"""Функция инициализации."""
         self.velocity = Twist()
-        rospy.init_node('Joypad_controller')
-        self.pub = rospy.Publisher('cmd_vel', Twist)
-        rospy.Subscriber("joy", Joy, self.update_data)
+        self.velocity_publisher = rospy.Publisher('cmd_vel', Twist)
+        rospy.Subscriber("joy", Joy, self.update_data_from_joy)
 
-    def convert_joy_to_velocity(self, data):
-        u"""Преобразует данные с джойстика и возвращает скорость, типа Twist.
-
-        data - данные с джойстика, типа Joy
-        """
-        velocity = Twist()
-        velocity.linear.x = data.axes[1] / 4.0
-        velocity.linear.y = data.axes[0] / 4.0
-        velocity.angular.x = data.axes[3]
-        velocity.angular.z = data.axes[2]
-        return velocity
-
-    def update_data(self, data):
+    def update_data_from_joy(self, data):
         u""" Обновляет скорость при поступлении данных с джойстика.
 
         Запускается каждый раз при получении данных с джойстика
+        Задаёт линейную скорость по оси X с 2 или 6 оси джойстика
+        Задаёт линейную скорость по оси Y с 1 оси джойстика
+        Задаёт угловую скорость вокруг оси Z с 5 оси джойстика
         """
         if data.buttons[10] or data.buttons[9]:
             rospy.signal_shutdown(u"До свидиния!")
-        self.velocity = self.convert_joy_to_velocity(data)
+        self.velocity.linear.x = max(abs(data.axes[1]), abs(data.axes[5])) / 2.0
+        self.velocity.linear.y = data.axes[0] / 2.0
+        self.velocity.angular.z = data.axes[4] / 2.0
 
     def run(self):
         u"""Запускает Node и публикует сообщения по топику cmd_vel."""
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
-            self.pub.publish(N.velocity)
+            self.velocity_publisher.publish(N.velocity)
             rate.sleep()
 
 
 if __name__ == '__main__':
+    rospy.init_node('Joypad_controller')
     N = JoypadControlNode()
     N.run()
