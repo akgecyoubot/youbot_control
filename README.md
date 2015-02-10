@@ -11,7 +11,6 @@ For more info see project wiki.
 ## Installation
  1. *set up ROS Groovy and configure catkin workspace*
  2. `sudo apt-get install ros-groovy-youbot-oodl`
- 2. `cd ~/catkin_ws/src`
- 3. `git clone https://github.com/kirillmorozov/pybotserver.git`
- 4. `cd ..`
+ 3. `git clone https://github.com/kirillmorozov/pybotserver.git ~/catkin_ws/src`
+ 4. `cd ~/catkin_ws/`
  5. `catkin_make`
