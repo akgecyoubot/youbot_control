@@ -28,11 +28,11 @@ class JoypadControlNode(object):
         if data.buttons[10] or data.buttons[9]:
             rospy.signal_shutdown(u"До свидиния!")
         if abs(data.axes[1]) > abs(data.axes[5]):
-            self.velocity.linear.x = data.axes[1]
+            self.velocity.linear.x = data.axes[1] / 3.0
         else:
-            self.velocity.linear.x = data.axes[5]
-        self.velocity.linear.y = data.axes[0] / 2.0
-        self.velocity.angular.z = data.axes[4] / 2.0
+            self.velocity.linear.x = data.axes[5] / 3.0
+        self.velocity.linear.y = data.axes[0] / 3.0
+        self.velocity.angular.z = data.axes[4] / 3.0
 
     def run(self):
         u"""Запускает Node и публикует сообщения по топику cmd_vel."""
