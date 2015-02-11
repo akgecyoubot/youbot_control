@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   sensor_msgs
-  youbot_oodl
   message_generation
 )
 
@@ -87,7 +86,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES pybotserver
-   CATKIN_DEPENDS rospy std_msgs youbot_oodl geometry_msgs sensor_msgs
+   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs
 #  DEPENDS system_lib
 )
 
