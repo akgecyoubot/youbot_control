@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-
 <!--
 
 This launch file starts the ROS wrapper for the KUKA youBot API.
@@ -19,4 +18,3 @@ or enable the USE_SETCAP flag in the cmake file and recompile again.
 	</node>
 		  
 </launch>
-
