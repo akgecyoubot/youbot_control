@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   message_generation
+  brics_actuator
 )
 
 ## System dependencies are found with CMake's conventions
@@ -72,6 +73,7 @@ generate_messages(
    geometry_msgs
    std_msgs
    sensor_msgs
+   brics_actuator
 )
 
 ###################################
@@ -86,7 +88,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES pybotserver
-   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs
+   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs brics_actuator
 #  DEPENDS system_lib
 )
 
