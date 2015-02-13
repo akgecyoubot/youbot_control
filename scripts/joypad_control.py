@@ -23,24 +23,28 @@ class JoypadControlNode(object):
         rospy.Subscriber("/joy", Joy, self.update_data_from_joy)
 
     def update_data_from_joy(self, data):
-        u""" Обновляет скорость при поступлении данных с джойстика.
+        u""" Обновляет данные при поступлении информации с джойстика.
 
         Запускается каждый раз при получении данных с джойстика
-        Задаёт линейную скорость по оси X с 2 или 6 оси джойстика
-        Задаёт линейную скорость по оси Y с 1 оси джойстика
-        Задаёт угловую скорость вокруг оси Z с 5 оси джойстика
         """
         # Shutdown handling
         if data.buttons[10] or data.buttons[9]:
             rospy.signal_shutdown(u"До свидиния!")
-        # Base velocity handling
+        self.update_base_velocity(data)
+        self.update_gripper_position(data)
+        self.update_arm_velocities(data)
+
+    def update_base_velocity(self, data):
+        u"""Задаёт скорость базы."""
         if abs(data.axes[1]) > abs(data.axes[5]):
             self.base_velocity.linear.x = data.axes[1] / 3.0
         else:
             self.base_velocity.linear.x = data.axes[5] / 3.0
         self.base_velocity.linear.y = data.axes[0] / 3.0
-        self.base_velocity.angular.z = data.axes[4] / 3.0
-        # Arm velocities handling
+        self.base_velocity.angular.z = data.axes[4] / 2.0
+
+    def update_gripper_position(self, data):
+        u"""Открывает/закрывает гриппер."""
         self.gripper_position.positions = []
         # Open gripper
         if data.buttons[6]:
@@ -70,7 +74,9 @@ class JoypadControlNode(object):
             B.unit = 'm'
             B.timeStamp = rospy.Time.now()
             self.gripper_position.positions.append(B)
-        # Joint 1 movement
+
+    def update_arm_velocities(self, data):
+        u"""Задаёт скорости осей манипулятора."""
         self.arm_velocities.velocities = []
         if notXOR(data.buttons[4], data.buttons[5]):
             A = JointValue()
@@ -82,17 +88,17 @@ class JoypadControlNode(object):
             A = JointValue()
             A.joint_uri = 'arm_joint_1'
             A.unit = 's^-1 rad'
-            A.value = 0.5
+            A.value = 1
             self.arm_velocities.velocities.append(A)
         elif data.buttons[5]:
             A = JointValue()
             A.joint_uri = 'arm_joint_1'
             A.unit = 's^-1 rad'
-            A.value = -0.5
+            A.value = -1
             self.arm_velocities.velocities.append(A)
 
     def run(self):
-        u"""Запускает Node и публикует сообщения по топику cmd_vel."""
+        u"""Запускает Node и публикует сообщения по топикам."""
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.base_velocity_publisher.publish(self.base_velocity)
