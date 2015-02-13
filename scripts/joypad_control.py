@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=UTF-8
 u"""Node контролирующий youBot с джойстика."""
+# TODO: Переменная изменяющая сокрость движения базы/манипулятора
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -28,7 +29,7 @@ class JoypadControlNode(object):
         Запускается каждый раз при получении данных с джойстика
         """
         # Shutdown handling
-        if data.buttons[10] or data.buttons[9]:
+        if data.buttons[10] or data.buttons[11]:
             rospy.signal_shutdown(u"До свидиния!")
         self.update_base_velocity(data)
         self.update_gripper_position(data)
