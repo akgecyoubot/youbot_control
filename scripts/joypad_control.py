@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=UTF-8
-u"""Node контролирующий youBot с джойстика."""
+u"""TODO: add module documentation."""
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -11,10 +11,10 @@ from brics_actuator.msg import JointValue, JointPositions, JointVelocities
 class JoypadControlNode(object):
     # pylint: disable=R0902
 
-    u"""Класс Нода позволяющего контролировать youBot с джойстика."""
+    u"""TODO: Add class documentation."""
 
     def __init__(self):
-        u"""Функция инициализации."""
+        u"""Конструктор класса."""
         self.base_velocity = Twist()
         self.gripper_position = JointPositions()
         self.arm_velocities = JointVelocities()
@@ -51,54 +51,53 @@ class JoypadControlNode(object):
         self.gripper_position.positions = []
         # Open gripper
         if data.buttons[6]:
-            A = JointValue()
-            A.joint_uri = 'gripper_finger_joint_r'
-            A.value = 0.011499
-            A.unit = 'm'
-            A.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(A)
-            B = JointValue()
-            B.joint_uri = 'gripper_finger_joint_l'
-            B.value = 0.011499
-            B.unit = 'm'
-            B.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(B)
+            tmp_joint_value = JointValue()
+            tmp_joint_value.joint_uri = 'gripper_finger_joint_r'
+            tmp_joint_value.value = 0.011499
+            tmp_joint_value.unit = 'm'
+            tmp_joint_value.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_joint_value)
+            tmp_joint_value.joint_uri = 'gripper_finger_joint_l'
+            # tmp_joint_value.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_joint_value)
         # Close gripper
         if data.buttons[7]:
-            A = JointValue()
-            A.joint_uri = 'gripper_finger_joint_r'
-            A.value = 0
-            A.unit = 'm'
-            A.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(A)
-            B = JointValue()
-            B.joint_uri = 'gripper_finger_joint_l'
-            B.value = 0
-            B.unit = 'm'
-            B.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(B)
+            tmp_joint_value = JointValue()
+            tmp_joint_value.joint_uri = 'gripper_finger_joint_r'
+            tmp_joint_value.value = 0
+            tmp_joint_value.unit = 'm'
+            tmp_joint_value.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_joint_value)
+            tmp_joint_value.joint_uri = 'gripper_finger_joint_l'
+            # tmp_joint_value.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_joint_value)
 
     def update_arm_velocities(self, data):
         u"""Задаёт скорости осей манипулятора."""
         self.arm_velocities.velocities = []
         if notXOR(data.buttons[4], data.buttons[5]):
-            A = JointValue()
-            A.joint_uri = 'arm_joint_1'
-            A.unit = 's^-1 rad'
-            A.value = 0
-            self.arm_velocities.velocities.append(A)
+            tmp_joint_value = JointValue()
+            tmp_joint_value.joint_uri = 'arm_joint_1'
+            tmp_joint_value.unit = 's^-1 rad'
+            tmp_joint_value.value = 0
+            self.arm_velocities.velocities.append(tmp_joint_value)
         elif data.buttons[4]:
-            A = JointValue()
-            A.joint_uri = 'arm_joint_1'
-            A.unit = 's^-1 rad'
-            A.value = 1 * self.arm_speed_multiplier
-            self.arm_velocities.velocities.append(A)
+            tmp_joint_value = JointValue()
+            tmp_joint_value.joint_uri = 'arm_joint_1'
+            tmp_joint_value.unit = 's^-1 rad'
+            tmp_joint_value.value = 1 * self.arm_speed_multiplier
+            self.arm_velocities.velocities.append(tmp_joint_value)
         elif data.buttons[5]:
-            A = JointValue()
-            A.joint_uri = 'arm_joint_1'
-            A.unit = 's^-1 rad'
-            A.value = -1 * self.arm_speed_multiplier
-            self.arm_velocities.velocities.append(A)
+            tmp_joint_value = JointValue()
+            tmp_joint_value.joint_uri = 'arm_joint_1'
+            tmp_joint_value.unit = 's^-1 rad'
+            tmp_joint_value.value = -1 * self.arm_speed_multiplier
+            self.arm_velocities.velocities.append(tmp_joint_value)
+
+    def emergency_brake(self):
+        u"""Останавливает все привода youBot."""
+        # TODO Написать эту функцию
+        pass
 
     def run(self):
         u"""Запускает Node и публикует сообщения по топикам."""
