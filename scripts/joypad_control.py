@@ -9,9 +9,9 @@ from brics_actuator.msg import JointValue, JointPositions, JointVelocities
 
 
 class JoypadControlNode(object):
-    # pylint: disable-msg=R0902
+    # pylint: disable=R0902
 
-    u"""Класс Нода."""
+    u"""Класс Нода позволяющего контролировать youBot с джойстика."""
 
     def __init__(self):
         u"""Функция инициализации."""
