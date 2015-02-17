@@ -18,8 +18,8 @@ class JoypadControlNode(object):
         self.base_velocity = Twist()
         self.gripper_position = JointPositions()
         self.arm_velocities = JointVelocities()
-        self.base_speed_multiplier = 0.33
-        self.arm_speed_multiplier = 1.0
+        self.base_speed_multiplier = 1
+        self.arm_speed_multiplier = 0.33
         self.base_velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
         self.gripper_position_publisher = rospy.Publisher('/arm_1/gripper_controller/position_command', JointPositions)
         self.arm_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command', JointVelocities)
@@ -51,26 +51,32 @@ class JoypadControlNode(object):
         self.gripper_position.positions = []
         # Open gripper
         if data.buttons[6]:
-            tmp_joint_value = JointValue()
-            tmp_joint_value.joint_uri = 'gripper_finger_joint_r'
-            tmp_joint_value.value = 0.011499
-            tmp_joint_value.unit = 'm'
-            tmp_joint_value.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(tmp_joint_value)
-            tmp_joint_value.joint_uri = 'gripper_finger_joint_l'
-            # tmp_joint_value.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(tmp_joint_value)
+            tmp_gripper_position_r = JointValue()
+            tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
+            tmp_gripper_position_r.value = 0.011499
+            tmp_gripper_position_r.unit = 'm'
+            tmp_gripper_position_r.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_r)
+            tmp_gripper_position_l = JointValue()
+            tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
+            tmp_gripper_position_l.value = 0.011499
+            tmp_gripper_position_l.unit = 'm'
+            tmp_gripper_position_l.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_l)
         # Close gripper
         if data.buttons[7]:
-            tmp_joint_value = JointValue()
-            tmp_joint_value.joint_uri = 'gripper_finger_joint_r'
-            tmp_joint_value.value = 0
-            tmp_joint_value.unit = 'm'
-            tmp_joint_value.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(tmp_joint_value)
-            tmp_joint_value.joint_uri = 'gripper_finger_joint_l'
-            # tmp_joint_value.timeStamp = rospy.Time.now()
-            self.gripper_position.positions.append(tmp_joint_value)
+            tmp_gripper_position_r = JointValue()
+            tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
+            tmp_gripper_position_r.value = 0
+            tmp_gripper_position_r.unit = 'm'
+            tmp_gripper_position_r.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_r)
+            tmp_gripper_position_l = JointValue()
+            tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
+            tmp_gripper_position_l.value = 0
+            tmp_gripper_position_l.unit = 'm'
+            tmp_gripper_position_l.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_l)
 
     def update_arm_velocities(self, data):
         u"""Задаёт скорости осей манипулятора."""
@@ -93,11 +99,6 @@ class JoypadControlNode(object):
             tmp_joint_value.unit = 's^-1 rad'
             tmp_joint_value.value = -1 * self.arm_speed_multiplier
             self.arm_velocities.velocities.append(tmp_joint_value)
-
-    def emergency_brake(self):
-        u"""Останавливает все привода youBot."""
-        # TODO Написать эту функцию
-        pass
 
     def run(self):
         u"""Запускает Node и публикует сообщения по топикам."""
