@@ -11,13 +11,25 @@ from sensor_msgs.msg import JointState
 
 class YouBot(object):
 
-    """youBot class.
+    u"""youBot class.
 
-    TODO: write documentation for this class
+    Attributes:
+        arm (YouBot.Arm): controls youBot arm.
+        base (YouBot.Base): controls youBot base.
+
+    Класс youBot'a
+
+    Атрибуты:
+        arm (YouBot.Arm): контролирует манипулятор
+        base (YouBot.Base): контролирует базу
+
     """
 
     def __init__(self):
-        """Class constructor."""
+        u"""Class constructor.
+
+        Конструктор класса.
+        """
         rospy.init_node('rospyoubot')
         self.arm = YouBot.Arm()
         self.base = YouBot.Base()
@@ -30,33 +42,52 @@ class YouBot(object):
         """
 
         def __init__(self):
-            """Class constructor."""
+            u"""Class constructor.
+
+            Конструктор класса.
+            """
             self.velocity = Twist()
             self.odometry = Odometry()
             self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
-            rospy.Subscriber('/odom', Odometry, self.update_odometry)
+            rospy.Subscriber('/odom', Odometry, self._update_odometry)
 
         def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
-            """Set base velocity vector.
+            u"""Set base velocity vector.
 
-            Keyword arguments:
-                lin_x -- linear velocity along x axis (default 0)
-                lin_y -- linear velocity along y axis (default 0)
-                ang_z -- angular velocity around z axis (default 0)
+            Arguments:
+                lin_x -- linear velocity along X axis (default 0)
+                lin_y -- linear velocity along Y axis (default 0)
+                ang_z -- angular velocity around Z axis (default 0)
+
+            Задаёт вектор скорости базы.
+
+            Аргументы:
+                lin_x -- линейная скорость вдоль оси Х (default 0)
+                lin_y -- линейная скорость вдоль оси Y (default 0)
+                ang_z -- угловая скорость вдоль оси Z (default 0)
             """
             self.velocity.linear.x = lin_x
             self.velocity.linear.y = lin_y
             self.velocity.angular.z = ang_z
             self.velocity_publisher.publish(self.velocity)
 
-        def update_odometry(self, data):
-            """Update odometry every time message is recieved."""
+        def _update_odometry(self, data):
+            u"""Update odometry every time message is recieved.
+
+            Обновляет одометрию при поступлении сообщения.
+            """
             self.odometry = data
 
         def get_odometry(self):
-            """Return list with odometry.
+            u"""Return list with odometry.
 
-            get_odometry() -> [x, y, z, rotation x, rotation y, rotation z]
+            Returns:
+                list: [X, Y, Z, rotation X, rotation Y, rotation Z]
+
+            Возвращает одометрию.
+
+            Возвращает:
+                список: [X, Y, Z, поворот по X, поворот по Y, поворот по Z]
             """
             return self.odometry.pose.covariance
 
@@ -68,20 +99,28 @@ class YouBot(object):
         """
 
         def __init__(self):
-            """Class constructor."""
+            u"""Class constructor.
+
+            Конструктор класса.
+            """
             self.gripper = YouBot.Gripper()
             self.joints_positions = JointPositions()
             self.current_joints_states = JointState()
             self.joints_velocities = JointVelocities()
             self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command', JointPositions)
             self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command', JointVelocities)
-            rospy.Subscriber('/joint_states', JointState, self.update_joints_states)
+            rospy.Subscriber('/joint_states', JointState, self._update_joints_states)
 
         def set_joints_angles(self, *args):
-            """Set arm joints to defined angles.
+            u"""Set arm joints to defined angles in radians.
 
             Arguments:
                 *args -- joints angles (j1, j2, j3, j4, j5)
+
+            Устанавливает углы поворота степеней подвижности в радианах.
+
+            Аргументы:
+                *args -- уголы соотвествующих степеней (j1, j2, j3, j4, j5)
             """
             assert len(args) <= 5
             self.joints_positions.positions = []
@@ -95,10 +134,15 @@ class YouBot(object):
             self.joints_positions_publisher.publish(self.joints_positions)
 
         def set_joints_velocities(self, *args):
-            """Set velocity for each joint.
+            u"""Set velocity for each joint.
 
             Arguments:
                 *args -- velocity for each joint (j1, j2, j3, j4, j5)
+
+            Устанавливает скорость каждоый степени подвижности в радианах/с.
+
+            Аргументы:
+                *args -- скорости соотвествующих степеней (j1, j2, j3, j4, j5)
             """
             assert len(args) <= 5
             self.joints_velocities.velocities = []
@@ -111,16 +155,13 @@ class YouBot(object):
                 self.joints_velocities.velocities.append(tmp)
             self.joints_velocities_publisher.publish(self.joints_velocities)
 
-        def update_joints_states(self, joints_data):
+        def _update_joints_states(self, joints_data):
             """Update joints states when info is received."""
             self.current_joints_states = joints_data
 
         def get_current_joints_states(self):
-            """TODO: write documentation for this function.
-
-            TODO: implement this
-            """
-            pass
+            """TODO: write documentation for this function."""
+            raise NotImplementedError
 
     class Gripper(object):
 
@@ -137,7 +178,8 @@ class YouBot(object):
         def set_gripper_state(self, open_gripper=True):
             """Open/close gripper.
 
-            TODO: write documentation for this function
+            Arguments:
+                open_gripper (bool): if True - opens gripper, if False - otherwise
             """
             self.gripper_position.positions = []
             if open_gripper:
