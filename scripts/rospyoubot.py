@@ -82,17 +82,17 @@ class YouBot(object):
             u"""Return list with odometry.
 
             Returns:
-                list: [X, Y, Z, rotation X, rotation Y, rotation Z]
+                tuple: (X, Y, Z, rotation X, rotation Y, rotation Z)
 
             Возвращает одометрию.
 
             Возвращает:
-                список: [X, Y, Z, поворот по X, поворот по Y, поворот по Z]
+                кортеж (X, Y, Z, поворот по X, поворот по Y, поворот по Z)
             """
             position = ()
             position += self.odometry.pose.pose.position.x,
             position += self.odometry.pose.pose.position.y,
-            position += self.odometry.pose.pose.position.z,
+            position += self.odometry.pose.pose.orientation.z,
             return position
 
     class Arm(object):
