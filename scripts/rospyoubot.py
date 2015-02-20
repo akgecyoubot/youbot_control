@@ -89,7 +89,11 @@ class YouBot(object):
             Возвращает:
                 список: [X, Y, Z, поворот по X, поворот по Y, поворот по Z]
             """
-            return self.odometry.pose.covariance
+            position = ()
+            position += self.odometry.pose.pose.position.x,
+            position += self.odometry.pose.pose.position.y,
+            position += self.odometry.pose.pose.position.z,
+            return position
 
     class Arm(object):
 
@@ -106,6 +110,8 @@ class YouBot(object):
             self.gripper = YouBot.Gripper()
             self.joints_positions = JointPositions()
             self.current_joints_states = JointState()
+            for i in range(5):
+                self.current_joints_states.position.append(0.0)
             self.joints_velocities = JointVelocities()
             self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command', JointPositions)
             self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command', JointVelocities)
@@ -159,9 +165,9 @@ class YouBot(object):
             """Update joints states when info is received."""
             self.current_joints_states = joints_data
 
-        def get_current_joints_states(self):
+        def get_current_joints_positions(self):
             """TODO: write documentation for this function."""
-            raise NotImplementedError
+            return self.current_joints_states.position
 
     class Gripper(object):
 
