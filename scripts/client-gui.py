@@ -13,8 +13,6 @@ class MainApplication(ttk.Frame):
         self.grid(sticky='nswe')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.bind('<Key>', key_pressed)
-        self.bind('<KeyRelease>', key_released)
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.notebook = ttk.Notebook(self)
@@ -48,11 +46,21 @@ class OdometryFrame(ttk.LabelFrame):
         self.odom_z = tk.StringVar()
         self.odom_z.set('z')
         ttk.Label(self, text='X:', width=5, anchor=tk.E).grid(column=0, row=0)
-        ttk.Label(self, textvariable=ODOMETRY[0], width=6, anchor=tk.W).grid(column=1, row=0)
+        ttk.Label(self,
+                  textvariable=ODOMETRY[0],
+                  width=6,
+                  anchor=tk.W).grid(column=1, row=0)
         ttk.Label(self, text='Y:', width=5, anchor=tk.E).grid(column=0, row=1)
-        ttk.Label(self, textvariable=ODOMETRY[1], width=6, anchor=tk.W).grid(column=1, row=1)
-        ttk.Label(self, text='ori Z:', width=5, anchor=tk.E).grid(column=0, row=2)
-        ttk.Label(self, textvariable=ODOMETRY[2], width=6, anchor=tk.W).grid(column=1, row=2)
+        ttk.Label(self,
+                  textvariable=ODOMETRY[1],
+                  width=6,
+                  anchor=tk.W).grid(column=1, row=1)
+        ttk.Label(self, text='ori Z:', width=5, anchor=tk.E).grid(column=0,
+                                                                  row=2)
+        ttk.Label(self,
+                  textvariable=ODOMETRY[2],
+                  width=6,
+                  anchor=tk.W).grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
 
@@ -61,21 +69,23 @@ class JointsControlsFrame(ttk.LabelFrame):
         ttk.LabelFrame.__init__(self, parent, text='Joints control:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        a1 = JointControl(self, 1)
-        a1.grid(row=0, columnspan=2, sticky='nswe')
-        a2 = JointControl(self, 2)
-        a2.grid(row=1, columnspan=2, sticky='nswe')
-        a3 = JointControl(self, 3)
-        a3.grid(row=2, columnspan=2, sticky='nswe')
-        a4 = JointControl(self, 4)
-        a4.grid(row=3, columnspan=2, sticky='nswe')
-        a5 = JointControl(self, 5)
-        a5.grid(row=4, columnspan=2, sticky='nswe')
+        self.a1 = JointControl(self, 1)
+        self.a1.grid(row=0, columnspan=2, sticky='nswe')
+        self.a2 = JointControl(self, 2)
+        self.a2.grid(row=1, columnspan=2, sticky='nswe')
+        self.a3 = JointControl(self, 3)
+        self.a3.grid(row=2, columnspan=2, sticky='nswe')
+        self.a4 = JointControl(self, 4)
+        self.a4.grid(row=3, columnspan=2, sticky='nswe')
+        self.a5 = JointControl(self, 5)
+        self.a5.grid(row=4, columnspan=2, sticky='nswe')
+        self.gripper = GripperControl(self)
+        self.gripper.grid(row=5, columnspan=2, sticky='nswe')
         self.home_button = ttk.Button(self, text='HOME', width=6)
-        self.home_button.grid(row=5, column=0, sticky='nswe')
+        self.home_button.grid(row=6, column=0, sticky='nswe')
         self.home_button.bind('<Button-1>', go_home)
         self.home_button = ttk.Button(self, text='CANDLE', width=6)
-        self.home_button.grid(row=5, column=1, sticky='nswe')
+        self.home_button.grid(row=6, column=1, sticky='nswe')
         self.home_button.bind('<Button-1>', go_candle)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
@@ -90,7 +100,7 @@ class JointControl(ttk.Frame):
         self.joint = joint
         self.label = 'A{}:'.format(joint)
         self.angle = tk.StringVar()
-        ttk.Label(self, text=self.label).grid(column=0, row=0, sticky=tk.W)
+        ttk.Label(self, text=self.label, width=3).grid(column=0, row=0, sticky=tk.W)
         self.minus_button = ttk.Button(self, text='-', width=1)
         self.minus_button.grid(column=1, row=0, sticky=tk.W)
         self.minus_button.bind('<Button-1>', self.minus_button_press)
@@ -104,7 +114,6 @@ class JointControl(ttk.Frame):
         self.plus_button.grid(column=3, row=0, sticky=tk.E)
         self.plus_button.bind('<Button-1>', self.plus_button_press)
         self.plus_button.bind('<ButtonRelease-1>', key_released)
-        self.angle.set('state')
 
     def plus_button_press(self, *args):
         arm_velocities = [ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
@@ -171,6 +180,25 @@ class BaseControl(ttk.LabelFrame):
     def rr_button_press(self, *args):
         R1.base.set_velocity(ang_z=-BASE_VELOCITY)
 
+class GripperControl(ttk.Frame):
+    def __init__(self, parent):
+        ttk.Frame.__init__(self, parent)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.columnconfigure(3, weight=1)
+        ttk.Label(self, text='G:', width=3).grid(column=0, row=0, sticky='w')
+        self.close_button = ttk.Button(self, text='C', width=1)
+        self.close_button.grid(column=1, row=0, sticky='w')
+        self.close_button.bind('<Button-1>', close_gripper)
+        ttk.Label(self,
+                  textvariable=GRIPPER_STATE,
+                  anchor=tk.CENTER,
+                  width=5).grid(column=2, row=0, sticky=(tk.W, tk.E))
+        self.open_button = ttk.Button(self, text='O', width=1)
+        self.open_button.grid(column=3, row=0, sticky='e')
+        self.open_button.bind('<Button-1>', open_gripper)
+
 def key_pressed(event):
     # Base movement
     if event.char == 'i':
@@ -193,7 +221,6 @@ def key_released(event):
 def update_joints_labels():
     current_joints_positions = list(R1.arm.get_current_joints_positions())
     odom = R1.base.get_odometry()
-    # TODO: rewrite using list comprehension
     for i in range(3):
         ODOMETRY[i].set(round(odom[i], 3))
     for i in range(5):
@@ -206,6 +233,14 @@ def go_home(*args):
 def go_candle(*args):
     R1.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
 
+def close_gripper(*args):
+    GRIPPER_STATE.set('Close')
+    R1.arm.gripper.set_gripper_state(False)
+
+def open_gripper(*args):
+    GRIPPER_STATE.set('Open')
+    R1.arm.gripper.set_gripper_state(True)
+
 
 if __name__ == '__main__':
     BASE_VELOCITY = 1
@@ -213,10 +248,13 @@ if __name__ == '__main__':
     R1 = rospyoubot.YouBot()
     ROOT = tk.Tk()
     ROOT.title("youBot control")
-    ROOT.resizable(0,0)
+    ROOT.resizable(0, 0)
     ROOT.columnconfigure(0, weight=1)
     ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
     ODOMETRY = [tk.StringVar() for i in range(3)]
+    GRIPPER_STATE = tk.StringVar()
     MAINFRAME = MainApplication(ROOT)
+    ROOT.bind('<Key>', key_pressed)
+    ROOT.bind('<KeyRelease>', key_released)
     ROOT.after(100, update_joints_labels)
     ROOT.mainloop()
