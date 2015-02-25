@@ -5,7 +5,7 @@
 import rospyoubot
 import rospy
 
-if __name__ == '__main__':
+def test():
     R1 = rospyoubot.YouBot()
     timer = rospy.Rate(0.25)
     timer.sleep()
@@ -31,3 +31,7 @@ if __name__ == '__main__':
     timer.sleep()
     print "Going home..."
     R1.arm.set_joints_angles(0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062)
+
+
+if __name__ == '__main__':
+    test()
