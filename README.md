@@ -8,6 +8,7 @@ For more info see project wiki.
 ## What's implemented?
 
 - **Joypad control.** Execute `roslaunch pybotserver joypad_control.launch` in terminal to run.
+- **Basic GUI control** with `scripts/client-gui.py`
 
 ## Installation
 
