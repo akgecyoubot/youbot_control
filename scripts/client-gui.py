@@ -7,86 +7,101 @@ import ttk
 import rospyoubot
 
 
-BASE_VELOCITY = 1
-ARM_VELOCITY = 1
-R1 = rospyoubot.YouBot()
-class MainApplication(tk.Tk):
-    def __init__(self, *args, **kwargs):
-        tk.Tk.__init__(self, *args, **kwargs)
-        for i in range(5):
-            arm_joints_angles.append(tk.StringVar())
-        for i in range(3):
-            odometry.append(tk.StringVar())
+class MainApplication(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Frame.__init__(self, parent, *args, **kwargs)
+        self.grid(sticky='nswe')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
         self.bind('<Key>', key_pressed)
         self.bind('<KeyRelease>', key_released)
         self.style = ttk.Style()
         self.style.theme_use('clam')
-        self.title("youBot control")
         self.notebook = ttk.Notebook(self)
-        self.notebook.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.W, tk.E))
+        self.notebook.grid(column=0, row=0, sticky='nswe')
         self.f1 = ControlsPage(self.notebook)
         self.notebook.add(self.f1, text='Controls')
 
 class ControlsPage(ttk.Frame):
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
         self.odometry = OdometryFrame(self)
-        self.odometry.grid(column=0, row=0, rowspan=2, sticky=(tk.N, tk.S))
+        self.odometry.grid(column=0, row=0, rowspan=2, sticky='nswe')
         self.joints_controls = JointsControlsFrame(self)
-        self.joints_controls.grid(column=1, row=0, sticky=(tk.E, tk.W))
+        self.joints_controls.grid(column=1, row=0, sticky='nswe')
         self.base_control = BaseControl(self)
-        self.base_control.grid(column=1, row=1, sticky=(tk.W, tk.E))
+        self.base_control.grid(column=1, row=1, sticky='nswe')
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
 class OdometryFrame(ttk.LabelFrame):
     def __init__(self, parent):
+        ttk.LabelFrame.__init__(self, parent, text='Odometry:')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
         self.odom_x = tk.StringVar()
         self.odom_x.set('x')
         self.odom_y = tk.StringVar()
         self.odom_y.set('y')
         self.odom_z = tk.StringVar()
         self.odom_z.set('z')
-        ttk.LabelFrame.__init__(self, parent, text='Odometry:')
-        ttk.Label(self, text='X:').grid(column=0, row=0)
-        ttk.Label(self, textvariable=odometry[0]).grid(column=1, row=0)
-        ttk.Label(self, text='Y:').grid(column=0, row=1)
-        ttk.Label(self, textvariable=odometry[1]).grid(column=1, row=1)
-        ttk.Label(self, text='ori Z:').grid(column=0, row=2)
-        ttk.Label(self, textvariable=odometry[2]).grid(column=1, row=2)
+        ttk.Label(self, text='X:', width=5, anchor=tk.E).grid(column=0, row=0)
+        ttk.Label(self, textvariable=ODOMETRY[0], width=6, anchor=tk.W).grid(column=1, row=0)
+        ttk.Label(self, text='Y:', width=5, anchor=tk.E).grid(column=0, row=1)
+        ttk.Label(self, textvariable=ODOMETRY[1], width=6, anchor=tk.W).grid(column=1, row=1)
+        ttk.Label(self, text='ori Z:', width=5, anchor=tk.E).grid(column=0, row=2)
+        ttk.Label(self, textvariable=ODOMETRY[2], width=6, anchor=tk.W).grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
 
 class JointsControlsFrame(ttk.LabelFrame):
     def __init__(self, parent):
         ttk.LabelFrame.__init__(self, parent, text='Joints control:')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
         a1 = JointControl(self, 1)
-        a1.grid(row=0, column=0)
+        a1.grid(row=0, columnspan=2, sticky='nswe')
         a2 = JointControl(self, 2)
-        a2.grid(row=1, column=0)
+        a2.grid(row=1, columnspan=2, sticky='nswe')
         a3 = JointControl(self, 3)
-        a3.grid(row=2, column=0)
+        a3.grid(row=2, columnspan=2, sticky='nswe')
         a4 = JointControl(self, 4)
-        a4.grid(row=3, column=0)
+        a4.grid(row=3, columnspan=2, sticky='nswe')
         a5 = JointControl(self, 5)
-        a5.grid(row=4, column=0)
+        a5.grid(row=4, columnspan=2, sticky='nswe')
+        self.home_button = ttk.Button(self, text='HOME', width=6)
+        self.home_button.grid(row=5, column=0, sticky='nswe')
+        self.home_button.bind('<Button-1>', go_home)
+        self.home_button = ttk.Button(self, text='CANDLE', width=6)
+        self.home_button.grid(row=5, column=1, sticky='nswe')
+        self.home_button.bind('<Button-1>', go_candle)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
 
 class JointControl(ttk.Frame):
     def __init__(self, parent, joint):
         ttk.Frame.__init__(self, parent)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.columnconfigure(3, weight=1)
         self.joint = joint
         self.label = 'A{}:'.format(joint)
         self.angle = tk.StringVar()
-        ttk.Label(self, text=self.label).grid(column=0, row=0)
+        ttk.Label(self, text=self.label).grid(column=0, row=0, sticky=tk.W)
         self.minus_button = ttk.Button(self, text='-', width=1)
-        self.minus_button.grid(column=1, row=0)
+        self.minus_button.grid(column=1, row=0, sticky=tk.W)
         self.minus_button.bind('<Button-1>', self.minus_button_press)
         self.minus_button.bind('<ButtonRelease-1>', key_released)
-        ttk.Label(self, textvariable=arm_joints_angles[joint-1]).grid(column=2, row=0)
+        self.state_label = ttk.Label(self,
+                                     textvariable=ARM_JOINTS_ANGLES[joint-1],
+                                     width=5,
+                                     anchor=tk.CENTER)
+        self.state_label.grid(column=2, row=0, sticky=(tk.W, tk.E))
         self.plus_button = ttk.Button(self, text='+', width=1)
-        self.plus_button.grid(column=3, row=0)
+        self.plus_button.grid(column=3, row=0, sticky=tk.E)
         self.plus_button.bind('<Button-1>', self.plus_button_press)
         self.plus_button.bind('<ButtonRelease-1>', key_released)
         self.angle.set('state')
@@ -102,6 +117,9 @@ class JointControl(ttk.Frame):
 class BaseControl(ttk.LabelFrame):
     def __init__(self, parent):
         ttk.LabelFrame.__init__(self, parent, text='Base control:')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         # Rotate left
         self.rl_button = ttk.Button(self, text='RL', width=2)
         self.rl_button.grid(column=0, row=0, sticky=tk.SE)
@@ -175,17 +193,30 @@ def key_released(event):
 def update_joints_labels():
     current_joints_positions = list(R1.arm.get_current_joints_positions())
     odom = R1.base.get_odometry()
+    # TODO: rewrite using list comprehension
     for i in range(3):
-        odometry[i].set(round(odom[i], 3))
+        ODOMETRY[i].set(round(odom[i], 3))
     for i in range(5):
-        current_joints_positions[i] = round(current_joints_positions[i], 3)
-        arm_joints_angles[i].set(current_joints_positions[i])
-    APP.after(100, update_joints_labels)
+        ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
+    ROOT.after(100, update_joints_labels)
+
+def go_home(*args):
+    R1.arm.set_joints_angles(0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062)
+
+def go_candle(*args):
+    R1.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
 
 
 if __name__ == '__main__':
-    arm_joints_angles = []
-    odometry = []
-    APP = MainApplication()
-    APP.after(100, update_joints_labels)
-    APP.mainloop()
+    BASE_VELOCITY = 1
+    ARM_VELOCITY = 1
+    R1 = rospyoubot.YouBot()
+    ROOT = tk.Tk()
+    ROOT.title("youBot control")
+    ROOT.resizable(0,0)
+    ROOT.columnconfigure(0, weight=1)
+    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
+    ODOMETRY = [tk.StringVar() for i in range(3)]
+    MAINFRAME = MainApplication(ROOT)
+    ROOT.after(100, update_joints_labels)
+    ROOT.mainloop()
