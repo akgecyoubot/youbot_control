@@ -25,12 +25,12 @@ class ControlsPage(ttk.Frame):
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.odometry = OdometryFrame(self)
-        self.odometry.grid(column=0, row=0, rowspan=2, sticky='nswe')
         self.joints_controls = JointsControlsFrame(self)
         self.joints_controls.grid(column=1, row=0, sticky='nswe')
+        self.odometry = OdometryFrame(self)
+        self.odometry.grid(column=1, row=1, rowspan=1, sticky='nswe')
         self.base_control = BaseControl(self)
-        self.base_control.grid(column=1, row=1, sticky='nswe')
+        self.base_control.grid(column=1, row=2, sticky='nswe')
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
