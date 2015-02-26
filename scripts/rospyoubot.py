@@ -129,7 +129,7 @@ class YouBot(object):
             """
             assert len(args) <= 5
             self.joints_positions.positions = []
-            for i in range(len(args)):  # I know it's unpythonic, sorry
+            for i in range(5):
                 tmp = JointValue()
                 tmp.timeStamp = rospy.Time.now()
                 tmp.joint_uri = 'arm_joint_{}'.format(i+1)
