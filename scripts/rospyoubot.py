@@ -36,10 +36,7 @@ class YouBot(object):
 
     class Base(object):
 
-        """Control youBot Base.
-
-        TODO: write documentation for this class
-        """
+        """Control youBot Base."""
 
         def __init__(self):
             u"""Class constructor.
@@ -97,10 +94,7 @@ class YouBot(object):
 
     class Arm(object):
 
-        """Control youBot Arm.
-
-        TODO: write documentation for this class
-        """
+        """Control youBot Arm."""
 
         def __init__(self):
             u"""Class constructor.
@@ -110,12 +104,17 @@ class YouBot(object):
             self.gripper = YouBot.Gripper()
             self.joints_positions = JointPositions()
             self.current_joints_states = JointState()
-            for i in range(5):
-                self.current_joints_states.position.append(0.0)
+            # for i in range(5):
+                # self.current_joints_states.position.append(0.0)
+            self.current_joints_states = [0.0 for i in range(5)]
             self.joints_velocities = JointVelocities()
-            self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command', JointPositions)
-            self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command', JointVelocities)
-            rospy.Subscriber('/joint_states', JointState, self._update_joints_states)
+            self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
+                                                              JointPositions)
+            self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command',
+                                                               JointVelocities)
+            rospy.Subscriber('/joint_states',
+                             JointState,
+                             self._update_joints_states)
 
         def set_joints_angles(self, *args):
             u"""Set arm joints to defined angles in radians.
@@ -145,12 +144,12 @@ class YouBot(object):
             Arguments:
                 *args -- velocity for each joint (j1, j2, j3, j4, j5)
 
-            Устанавливает скорость каждоый степени подвижности в радианах/с.
+            Устанавливает скорость каждой степени подвижности в радианах/с.
 
             Аргументы:
                 *args -- скорости соотвествующих степеней (j1, j2, j3, j4, j5)
             """
-            assert len(args) <= 5
+            assert len(args) == 5
             self.joints_velocities.velocities = []
             for i in range(len(args)):  # I know it's unpythonic, sorry
                 tmp = JointValue()
@@ -166,20 +165,18 @@ class YouBot(object):
             self.current_joints_states = joints_data
 
         def get_current_joints_positions(self):
-            """TODO: write documentation for this function."""
+            """Return list of current joints angles."""
             return self.current_joints_states.position
 
     class Gripper(object):
 
-        """Gripper class.
-
-        TODO: write documentation for this class
-        """
+        """Gripper class."""
 
         def __init__(self):
             """Gripper constructor."""
             self.gripper_position = JointPositions()
-            self.gripper_position_publisher = rospy.Publisher('arm_1/gripper_controller/position_command', JointPositions)
+            self.gripper_position_publisher = rospy.Publisher('arm_1/gripper_controller/position_command',
+                                                              JointPositions)
 
         def set_gripper_state(self, open_gripper=True):
             """Open/close gripper.
@@ -217,3 +214,42 @@ class YouBot(object):
                 tmp_gripper_position_l.timeStamp = rospy.Time.now()
                 self.gripper_position.positions.append(tmp_gripper_position_l)
             self.gripper_position_publisher.publish(self.gripper_position)
+def test():
+    """Test rospyoubot functionality."""
+    robot = YouBot()
+    timer = rospy.Rate(0.25)
+    timer.sleep()
+    print "Testing base velocities command..."
+    robot.base.set_velocity(0.1, 0.1, -0.1)
+    timer.sleep()
+    robot.base.set_velocity()
+    timer.sleep()
+    print "Testing gripper position command..."
+    robot.arm.gripper.set_gripper_state(False)
+    timer.sleep()
+    robot.arm.gripper.set_gripper_state(True)
+    timer.sleep()
+    print "Testing arm position command..."
+    robot.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
+    timer.sleep()
+    robot.arm.set_joints_angles(0.0100693,
+                                0.0100693,
+                                -0.015708,
+                                0.0221239,
+                                0.11062)
+    timer.sleep()
+    print "Testing arm velocities commad..."
+    robot.arm.set_joints_velocities(0.1, 0.1, -0.1, 0.1, 0.1)
+    timer.sleep()
+    robot.arm.set_joints_velocities(0, 0, 0, 0, 0)
+    timer.sleep()
+    print "Going home..."
+    robot.arm.set_joints_angles(0.0100693,
+                                0.0100693,
+                                -0.015708,
+                                0.0221239,
+                                0.11062)
+
+
+if __name__ == '__main__':
+    test()
