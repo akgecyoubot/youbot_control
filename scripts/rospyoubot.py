@@ -104,9 +104,7 @@ class YouBot(object):
             self.gripper = YouBot.Gripper()
             self.joints_positions = JointPositions()
             self.current_joints_states = JointState()
-            # for i in range(5):
-                # self.current_joints_states.position.append(0.0)
-            self.current_joints_states = [0.0 for i in range(5)]
+            self.current_joints_states.position = [0.0 for i in range(5)]
             self.joints_velocities = JointVelocities()
             self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
                                                               JointPositions)
