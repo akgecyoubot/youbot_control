@@ -12,18 +12,18 @@ class MainApplication(ttk.Frame):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         self.grid(sticky='nswe')
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        # self.columnconfigure(1, weight=1)
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.notebook = ttk.Notebook(self)
         self.notebook.grid(column=0, row=0, sticky='nswe')
         self.f1 = ControlsPage(self.notebook)
-        self.notebook.add(self.f1, text='Controls')
+        self.notebook.add(self.f1, text='Controls', sticky='nswe')
 
 class ControlsPage(ttk.Frame):
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
-        self.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
         self.joints_controls = JointsControlsFrame(self)
         self.joints_controls.grid(column=1, row=0, sticky='nswe')
@@ -248,12 +248,14 @@ if __name__ == '__main__':
     R1 = rospyoubot.YouBot()
     ROOT = tk.Tk()
     ROOT.title("youBot control")
-    ROOT.resizable(0, 0)
+    ROOT.resizable(1, 0)
     ROOT.columnconfigure(0, weight=1)
     ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
     ODOMETRY = [tk.StringVar() for i in range(3)]
     GRIPPER_STATE = tk.StringVar()
     MAINFRAME = MainApplication(ROOT)
+    ROOT.update()
+    ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())
     ROOT.bind('<Key>', key_pressed)
     ROOT.bind('<KeyRelease>', key_released)
     ROOT.after(100, update_joints_labels)
