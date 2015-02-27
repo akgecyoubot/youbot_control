@@ -21,8 +21,14 @@ class MainApplication(ttk.Frame):
         self.style.theme_use('clam')
         self.notebook = ttk.Notebook(self)
         self.notebook.grid(column=0, row=0, sticky='nswe')
-        self.f1 = ControlsPage(self.notebook)
-        self.notebook.add(self.f1, text='Controls', sticky='nswe')
+        self.manual_controls = ControlsPage(self.notebook)
+        self.notebook.add(self.manual_controls,
+                          text='Ручное управление',
+                          sticky='nswe')
+        self.automatic_controls = AutomaticControls(self.notebook)
+        self.notebook.add(self.automatic_controls,
+                          text='Автоматическое управление',
+                          sticky='nswe')
 
 class ControlsPage(ttk.Frame):
 
@@ -47,7 +53,7 @@ class OdometryFrame(ttk.LabelFrame):
     u"""Фрейм одометрии."""
 
     def __init__(self, parent):
-        ttk.LabelFrame.__init__(self, parent, text='Odometry:')
+        ttk.LabelFrame.__init__(self, parent, text='Одометрия:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.odom_x = tk.StringVar()
@@ -66,7 +72,7 @@ class OdometryFrame(ttk.LabelFrame):
                   textvariable=ODOMETRY[1],
                   width=6,
                   anchor=tk.W).grid(column=1, row=1)
-        ttk.Label(self, text='ori Z:', width=5, anchor=tk.E).grid(column=0,
+        ttk.Label(self, text=u'\u03c6:', width=5, anchor=tk.E).grid(column=0,
                                                                   row=2)
         ttk.Label(self,
                   textvariable=ODOMETRY[2],
@@ -80,7 +86,7 @@ class JointsControlsFrame(ttk.LabelFrame):
     u"""Фрейм управления степенями подвижности."""
 
     def __init__(self, parent):
-        ttk.LabelFrame.__init__(self, parent, text='Joints control:')
+        ttk.LabelFrame.__init__(self, parent, text='Управление манипулятором:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.a1 = JointControl(self, 1)
@@ -95,14 +101,22 @@ class JointsControlsFrame(ttk.LabelFrame):
         self.a5.grid(row=4, columnspan=2, sticky='nswe')
         self.gripper = GripperControl(self)
         self.gripper.grid(row=5, columnspan=2, sticky='nswe')
-        self.home_button = ttk.Button(self, text='HOME', width=6)
+        self.home_button = ttk.Button(self, text='Домой', width=6)
         self.home_button.grid(row=6, column=0, sticky='nswe')
-        self.home_button.bind('<Button-1>', go_home)
-        self.home_button = ttk.Button(self, text='CANDLE', width=6)
+        self.home_button.bind('<Button-1>', self.go_home)
+        self.home_button = ttk.Button(self, text='Свеча', width=6)
         self.home_button.grid(row=6, column=1, sticky='nswe')
-        self.home_button.bind('<Button-1>', go_candle)
+        self.home_button.bind('<Button-1>', self.go_candle)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
+
+    def go_home(self, *args):
+        u"""Отправляет манипулятор в домашнюю позицию."""
+        R1.arm.set_joints_angles(0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062)
+
+    def go_candle(self, *args):
+        u"""Приводит манипулятор в положение свечки."""
+        R1.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
 
 class JointControl(ttk.Frame):
 
@@ -147,7 +161,7 @@ class BaseControl(ttk.LabelFrame):
     u"""Фрейм управления движением базы."""
 
     def __init__(self, parent):
-        ttk.LabelFrame.__init__(self, parent, text='Base control:')
+        ttk.LabelFrame.__init__(self, parent, text='Управление платформой:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
@@ -219,27 +233,31 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
-        ttk.Label(self, text='G:', width=3).grid(column=0, row=0, sticky='w')
-        self.close_button = ttk.Button(self, text='C', width=1)
+        ttk.Label(self, text='Схват:', width=6).grid(column=0, row=0, sticky='w')
+        self.close_button = ttk.Button(self, text='Закрыть', width=7)
         self.close_button.grid(column=1, row=0, sticky='w')
         self.close_button.bind('<Button-1>', self.close_gripper)
         ttk.Label(self,
                   textvariable=self.gripper_state,
                   anchor=tk.CENTER,
                   width=5).grid(column=2, row=0, sticky=(tk.W, tk.E))
-        self.open_button = ttk.Button(self, text='O', width=1)
+        self.open_button = ttk.Button(self, text='Открыть', width=7)
         self.open_button.grid(column=3, row=0, sticky='e')
         self.open_button.bind('<Button-1>', self.open_gripper)
 
     def close_gripper(self, *args):
         u"""Закрывает гриппер и записывает 'Closed' в его статус."""
-        self.gripper_state.set('Closed')
+        self.gripper_state.set('Закрыт')
         R1.arm.gripper.set_gripper_state(False)
 
     def open_gripper(self, *args):
         u"""Открывает гриппер и записывает 'Opened' в его статус."""
-        self.gripper_state.set('Opened')
+        self.gripper_state.set('Открыт')
         R1.arm.gripper.set_gripper_state(True)
+
+class AutomaticControls(ttk.Frame):
+    def __init__(self, parent):
+        ttk.Frame.__init__(self, parent)
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
@@ -271,14 +289,6 @@ def update_joints_labels():
     for i in range(5):
         ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
     ROOT.after(100, update_joints_labels)
-
-def go_home(*args):
-    u"""Отправляет манипулятор в домашнюю позицию."""
-    R1.arm.set_joints_angles(0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062)
-
-def go_candle(*args):
-    u"""Приводит манипулятор в положение свечки."""
-    R1.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
 
 
 if __name__ == '__main__':

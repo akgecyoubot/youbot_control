@@ -25,15 +25,6 @@ class YouBot(object):
 
     """
 
-    def __init__(self):
-        u"""Class constructor.
-
-        Конструктор класса.
-        """
-        rospy.init_node('rospyoubot')
-        self.arm = YouBot.Arm()
-        self.base = YouBot.Base()
-
     class Base(object):
 
         """Control youBot Base."""
@@ -212,6 +203,16 @@ class YouBot(object):
                 tmp_gripper_position_l.timeStamp = rospy.Time.now()
                 self.gripper_position.positions.append(tmp_gripper_position_l)
             self.gripper_position_publisher.publish(self.gripper_position)
+
+    def __init__(self):
+        u"""Class constructor.
+
+        Конструктор класса.
+        """
+        rospy.init_node('rospyoubot')
+        self.arm = YouBot.Arm()
+        self.base = YouBot.Base()
+
 def test():
     """Test rospyoubot functionality."""
     robot = YouBot()
