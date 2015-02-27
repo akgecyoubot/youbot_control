@@ -271,6 +271,7 @@ class AutomaticControls(ttk.Frame):
         self.pt_list = tk.StringVar()
         self.points_list = tk.Listbox(self,
                                       height=26,
+                                      selectmode='browse',
                                       listvariable=self.pt_list)
         self.points_list.grid(column=0,
                               row=0,
@@ -283,13 +284,15 @@ class AutomaticControls(ttk.Frame):
                    text=u'Добавить',
                    width=7)
         self.add_button.grid(column=0, row=0)
-        self.add_button.bind('<Button-1>', self.add_point_to_list)
+        self.add_button.bind('<Button-1>', self.add_to_list)
         ttk.Button(self.buttons_frame,
                    text=u'Редактировать',
                    width=7).grid(column=0, row=1)
-        ttk.Button(self.buttons_frame,
+        self.remove_button = ttk.Button(self.buttons_frame,
                    text=u'Удалить',
-                   width=7).grid(column=0, row=2)
+                   width=7)
+        self.remove_button.grid(column=0, row=2)
+        self.remove_button.bind('<Button-1>', self.remove_point)
         ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
         ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
         for child in self.winfo_children():
@@ -297,7 +300,7 @@ class AutomaticControls(ttk.Frame):
         for child in self.buttons_frame.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
-    def add_point_to_list(self, *args):
+    def add_to_list(self, *args):
         points = self.pt_list.get()
         points = points[1:-1]
         points = points.split()
@@ -306,6 +309,19 @@ class AutomaticControls(ttk.Frame):
         points.append('New_item')
         points = ' '.join(points)
         self.pt_list.set(points)
+
+    def remove_point(self, *args):
+        if len(self.points_list.curselection()) > 0:
+            index = int(self.points_list.curselection()[0])
+            points = self.pt_list.get()
+            points = points[1:-1]
+            points = points.split()
+            for i in range(len(points)):
+                points[i] = points[i].strip(",'")
+            points.pop(index)
+            points = ' '.join(points)
+            self.pt_list.set(points)
+
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
