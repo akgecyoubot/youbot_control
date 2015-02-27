@@ -112,7 +112,11 @@ class JointsControlsFrame(ttk.LabelFrame):
 
     def go_home(self, *args):
         u"""Отправляет манипулятор в домашнюю позицию."""
-        R1.arm.set_joints_angles(0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062)
+        R1.arm.set_joints_angles(0.0100693,
+                                 0.0100693,
+                                 -0.015708,
+                                 0.0221239,
+                                 0.11062)
 
     def go_candle(self, *args):
         u"""Приводит манипулятор в положение свечки."""
@@ -131,18 +135,20 @@ class JointControl(ttk.Frame):
         self.joint = joint
         self.label = 'A{}:'.format(joint)
         self.angle = tk.StringVar()
-        ttk.Label(self, text=self.label, width=3).grid(column=0, row=0, sticky=tk.W)
-        self.minus_button = ttk.Button(self, text='-', width=1)
-        self.minus_button.grid(column=1, row=0, sticky=tk.W)
+        ttk.Label(self, text=self.label, width=6, anchor='e').grid(column=0,
+                                                       row=0,
+                                                       sticky=tk.E)
+        self.minus_button = ttk.Button(self, text='-', width=7)
+        self.minus_button.grid(column=1, row=0)
         self.minus_button.bind('<Button-1>', self.minus_button_press)
         self.minus_button.bind('<ButtonRelease-1>', key_released)
         self.state_label = ttk.Label(self,
                                      textvariable=ARM_JOINTS_ANGLES[joint-1],
                                      width=5,
                                      anchor=tk.CENTER)
-        self.state_label.grid(column=2, row=0, sticky=(tk.W, tk.E))
-        self.plus_button = ttk.Button(self, text='+', width=1)
-        self.plus_button.grid(column=3, row=0, sticky=tk.E)
+        self.state_label.grid(column=2, row=0, sticky='nswe')
+        self.plus_button = ttk.Button(self, text='+', width=7)
+        self.plus_button.grid(column=3, row=0)
         self.plus_button.bind('<Button-1>', self.plus_button_press)
         self.plus_button.bind('<ButtonRelease-1>', key_released)
 
@@ -166,32 +172,32 @@ class BaseControl(ttk.LabelFrame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         # Rotate left
-        self.rl_button = ttk.Button(self, text='RL', width=2)
+        self.rl_button = ttk.Button(self, text=u'ВЛ', width=2)
         self.rl_button.grid(column=0, row=0, sticky=tk.SE)
         self.rl_button.bind('<Button-1>', self.rl_button_press)
         self.rl_button.bind('<ButtonRelease-1>', key_released)
         # Forward
-        self.f_button = ttk.Button(self, text='F', width=2)
+        self.f_button = ttk.Button(self, text=u'В', width=2)
         self.f_button.grid(column=1, row=0, sticky=tk.S)
         self.f_button.bind('<Button-1>', self.f_button_press)
         self.f_button.bind('<ButtonRelease-1>', key_released)
         # Rotate right
-        self.rr_button = ttk.Button(self, text='RR', width=2)
+        self.rr_button = ttk.Button(self, text=u'ВП', width=2)
         self.rr_button.grid(column=2, row=0, sticky=tk.SW)
         self.rr_button.bind('<Button-1>', self.rr_button_press)
         self.rr_button.bind('<ButtonRelease-1>', key_released)
         # Left
-        self.l_button = ttk.Button(self, text='L', width=2)
+        self.l_button = ttk.Button(self, text=u'Л', width=2)
         self.l_button.grid(column=0, row=1, sticky=tk.NE)
         self.l_button.bind('<Button-1>', self.l_button_press)
         self.l_button.bind('<ButtonRelease-1>', key_released)
         # Backwards
-        self.b_button = ttk.Button(self, text='B', width=2)
+        self.b_button = ttk.Button(self, text=u'Н', width=2)
         self.b_button.grid(column=1, row=1, sticky=tk.N)
         self.b_button.bind('<Button-1>', self.b_button_press)
         self.b_button.bind('<ButtonRelease-1>', key_released)
         # Right
-        self.r_button = ttk.Button(self, text='R', width=2)
+        self.r_button = ttk.Button(self, text=u'П', width=2)
         self.r_button.grid(column=2, row=1, sticky=tk.NW)
         self.r_button.bind('<Button-1>', self.r_button_press)
         self.r_button.bind('<ButtonRelease-1>', key_released)
@@ -233,16 +239,18 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
-        ttk.Label(self, text='Схват:', width=6).grid(column=0, row=0, sticky='w')
+        ttk.Label(self, text='Схват:', width=6, anchor='e').grid(column=0,
+                                                          row=0,
+                                                          sticky='e')
         self.close_button = ttk.Button(self, text='Закрыть', width=7)
-        self.close_button.grid(column=1, row=0, sticky='w')
+        self.close_button.grid(column=1, row=0)
         self.close_button.bind('<Button-1>', self.close_gripper)
         ttk.Label(self,
                   textvariable=self.gripper_state,
                   anchor=tk.CENTER,
                   width=5).grid(column=2, row=0, sticky=(tk.W, tk.E))
         self.open_button = ttk.Button(self, text='Открыть', width=7)
-        self.open_button.grid(column=3, row=0, sticky='e')
+        self.open_button.grid(column=3, row=0)
         self.open_button.bind('<Button-1>', self.open_gripper)
 
     def close_gripper(self, *args):
@@ -258,6 +266,31 @@ class GripperControl(ttk.Frame):
 class AutomaticControls(ttk.Frame):
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.points_list = tk.Listbox(self, height=26)
+        self.points_list.grid(column=0,
+                              row=0,
+                              sticky='nswe',
+                              rowspan=2,
+                              columnspan=2)
+        self.buttons_frame = ttk.Frame(self)
+        self.buttons_frame.grid(column=2, row=0, sticky='n')
+        ttk.Button(self.buttons_frame,
+                   text=u'Добавить',
+                   width=7).grid(column=0, row=0)
+        ttk.Button(self.buttons_frame,
+                   text=u'Редактировать',
+                   width=7).grid(column=0, row=1)
+        ttk.Button(self.buttons_frame,
+                   text=u'Удалить',
+                   width=7).grid(column=0, row=2)
+        ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
+        ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
+        for child in self.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in self.buttons_frame.winfo_children():
+            child.grid_configure(padx=5, pady=5)
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
