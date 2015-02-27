@@ -268,7 +268,10 @@ class AutomaticControls(ttk.Frame):
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.points_list = tk.Listbox(self, height=26)
+        self.pt_list = tk.StringVar()
+        self.points_list = tk.Listbox(self,
+                                      height=26,
+                                      listvariable=self.pt_list)
         self.points_list.grid(column=0,
                               row=0,
                               sticky='nswe',
@@ -276,9 +279,11 @@ class AutomaticControls(ttk.Frame):
                               columnspan=2)
         self.buttons_frame = ttk.Frame(self)
         self.buttons_frame.grid(column=2, row=0, sticky='n')
-        ttk.Button(self.buttons_frame,
+        self.add_button = ttk.Button(self.buttons_frame,
                    text=u'Добавить',
-                   width=7).grid(column=0, row=0)
+                   width=7)
+        self.add_button.grid(column=0, row=0)
+        self.add_button.bind('<Button-1>', self.add_point_to_list)
         ttk.Button(self.buttons_frame,
                    text=u'Редактировать',
                    width=7).grid(column=0, row=1)
@@ -291,6 +296,16 @@ class AutomaticControls(ttk.Frame):
             child.grid_configure(padx=5, pady=5)
         for child in self.buttons_frame.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
+    def add_point_to_list(self, *args):
+        points = self.pt_list.get()
+        points = points[1:-1]
+        points = points.split()
+        for i in range(len(points)):
+            points[i] = points[i].strip(",'")
+        points.append('New_item')
+        points = ' '.join(points)
+        self.pt_list.set(points)
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
