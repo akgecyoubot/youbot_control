@@ -53,6 +53,7 @@ class OdometryFrame(ttk.LabelFrame):
     u"""Фрейм одометрии."""
 
     def __init__(self, parent):
+        u"""Инициализация класса."""
         ttk.LabelFrame.__init__(self, parent, text='Одометрия:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -73,7 +74,7 @@ class OdometryFrame(ttk.LabelFrame):
                   width=6,
                   anchor=tk.W).grid(column=1, row=1)
         ttk.Label(self, text=u'\u03c6:', width=5, anchor=tk.E).grid(column=0,
-                                                                  row=2)
+                                                                    row=2)
         ttk.Label(self,
                   textvariable=ODOMETRY[2],
                   width=6,
@@ -86,19 +87,20 @@ class JointsControlsFrame(ttk.LabelFrame):
     u"""Фрейм управления степенями подвижности."""
 
     def __init__(self, parent):
+        u"""Инициализация класса."""
         ttk.LabelFrame.__init__(self, parent, text='Управление манипулятором:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.a1 = JointControl(self, 1)
-        self.a1.grid(row=0, columnspan=2, sticky='nswe')
-        self.a2 = JointControl(self, 2)
-        self.a2.grid(row=1, columnspan=2, sticky='nswe')
-        self.a3 = JointControl(self, 3)
-        self.a3.grid(row=2, columnspan=2, sticky='nswe')
-        self.a4 = JointControl(self, 4)
-        self.a4.grid(row=3, columnspan=2, sticky='nswe')
-        self.a5 = JointControl(self, 5)
-        self.a5.grid(row=4, columnspan=2, sticky='nswe')
+        self.a1_joint = JointControl(self, 1)
+        self.a1_joint.grid(row=0, columnspan=2, sticky='nswe')
+        self.a2_joint = JointControl(self, 2)
+        self.a2_joint.grid(row=1, columnspan=2, sticky='nswe')
+        self.a3_joint = JointControl(self, 3)
+        self.a3_joint.grid(row=2, columnspan=2, sticky='nswe')
+        self.a4_joint = JointControl(self, 4)
+        self.a4_joint.grid(row=3, columnspan=2, sticky='nswe')
+        self.a5_joint = JointControl(self, 5)
+        self.a5_joint.grid(row=4, columnspan=2, sticky='nswe')
         self.gripper = GripperControl(self)
         self.gripper.grid(row=5, columnspan=2, sticky='nswe')
         self.home_button = ttk.Button(self, text='Домой', width=6)
@@ -127,6 +129,7 @@ class JointControl(ttk.Frame):
     u"""Фрейм управления отдельной степенью."""
 
     def __init__(self, parent, joint):
+        u"""Инициализация класса."""
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -136,8 +139,8 @@ class JointControl(ttk.Frame):
         self.label = 'A{}:'.format(joint)
         self.angle = tk.StringVar()
         ttk.Label(self, text=self.label, width=6, anchor='e').grid(column=0,
-                                                       row=0,
-                                                       sticky=tk.E)
+                                                                   row=0,
+                                                                   sticky=tk.E)
         self.minus_button = ttk.Button(self, text='-', width=7)
         self.minus_button.grid(column=1, row=0)
         self.minus_button.bind('<Button-1>', self.minus_button_press)
@@ -167,6 +170,7 @@ class BaseControl(ttk.LabelFrame):
     u"""Фрейм управления движением базы."""
 
     def __init__(self, parent):
+        u"""Инициализация класса."""
         ttk.LabelFrame.__init__(self, parent, text='Управление платформой:')
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -233,6 +237,7 @@ class GripperControl(ttk.Frame):
     u"""Фрейм управления гриппером."""
 
     def __init__(self, parent):
+        u"""Инициализация класса."""
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -240,8 +245,8 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
         ttk.Label(self, text='Схват:', width=6, anchor='e').grid(column=0,
-                                                          row=0,
-                                                          sticky='e')
+                                                                 row=0,
+                                                                 sticky='e')
         self.close_button = ttk.Button(self, text='Закрыть', width=7)
         self.close_button.grid(column=1, row=0)
         self.close_button.bind('<Button-1>', self.close_gripper)
@@ -264,7 +269,11 @@ class GripperControl(ttk.Frame):
         R1.arm.gripper.set_gripper_state(True)
 
 class AutomaticControls(ttk.Frame):
+
+    u"""Фрейм автоматического управления."""
+
     def __init__(self, parent):
+        u"""Инициализация класса."""
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -281,16 +290,16 @@ class AutomaticControls(ttk.Frame):
         self.buttons_frame = ttk.Frame(self)
         self.buttons_frame.grid(column=2, row=0, sticky='n')
         self.add_button = ttk.Button(self.buttons_frame,
-                   text=u'Добавить',
-                   width=7)
+                                     text=u'Добавить',
+                                     width=7)
         self.add_button.grid(column=0, row=0)
         self.add_button.bind('<Button-1>', self.add_to_list)
         ttk.Button(self.buttons_frame,
                    text=u'Редактировать',
                    width=7).grid(column=0, row=1)
         self.remove_button = ttk.Button(self.buttons_frame,
-                   text=u'Удалить',
-                   width=7)
+                                        text=u'Удалить',
+                                        width=7)
         self.remove_button.grid(column=0, row=2)
         self.remove_button.bind('<Button-1>', self.remove_point)
         ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
@@ -301,6 +310,8 @@ class AutomaticControls(ttk.Frame):
             child.grid_configure(padx=5, pady=5)
 
     def add_to_list(self, *args):
+        u"""Добавляет движение в список движений."""
+        window = MotionSelectionWindow(self)
         points = self.pt_list.get()
         points = points[1:-1]
         points = points.split()
@@ -311,6 +322,7 @@ class AutomaticControls(ttk.Frame):
         self.pt_list.set(points)
 
     def remove_point(self, *args):
+        u"""Удаляет выбранное движение из списка."""
         if len(self.points_list.curselection()) > 0:
             index = int(self.points_list.curselection()[0])
             points = self.pt_list.get()
@@ -322,6 +334,44 @@ class AutomaticControls(ttk.Frame):
             points = ' '.join(points)
             self.pt_list.set(points)
 
+class MotionSelectionWindow(tk.Toplevel):
+
+    u"""Окно добавления движения."""
+
+    def __init__(self, parent):
+        u"""Инициализация класса."""
+        tk.Toplevel.__init__(self, parent)
+        self.title(u'Выбор движения')
+        self.resizable(0, 0)
+        self.widgets_frame = tk.Frame(self)
+        self.widgets_frame.grid(column=0, row=0)
+        ttk.Label(self.widgets_frame,
+                  text=u'Имя:').grid(column=0, row=0, sticky='e')
+        ttk.Entry(self.widgets_frame).grid(column=1, row=0, sticky='w')
+        ttk.Label(self.widgets_frame,
+                  text=u'Тип движения:').grid(column=2, row=0, sticky='e')
+        ttk.Combobox(self.widgets_frame).grid(column=3, row=0)
+        ttk.Label(self.widgets_frame,
+                  text=u'P1:',
+                  width=3).grid(column=4, row=0, sticky='e')
+        ttk.Entry(self.widgets_frame).grid(column=5, row=0, sticky='w')
+        ttk.Button(self.widgets_frame, text='Touch Up').grid(column=5, row=1)
+        ttk.Label(self.widgets_frame,
+                  text=u'P2:',
+                  width=3).grid(column=6, row=0, sticky='e')
+        ttk.Entry(self.widgets_frame).grid(column=7, row=0, sticky='w')
+        ttk.Button(self.widgets_frame, text='Touch Up').grid(column=7, row=1)
+        ttk.Button(self.widgets_frame, text=u'Сохранить').grid(row=2, column=0)
+        cancel_button = ttk.Button(self.widgets_frame,
+                                   text=u'Отмена',
+                                   command=self.cancel)
+        cancel_button.grid(row=2, column=1)
+        for child in self.widgets_frame.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+
+    def cancel(self, *args):
+        u"""Закрывает окно, не сохраняя результат."""
+        self.destroy()
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
