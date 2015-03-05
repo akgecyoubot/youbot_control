@@ -101,7 +101,7 @@ class Arm(object):
 
         Конструктор класса.
         """
-        self.gripper = YouBot.Gripper()
+        self.gripper = Gripper()
         self.joints_positions = JointPositions()
         self.current_joints_states = JointState()
         self.current_joints_states.position = [0.0 for i in range(5)]
