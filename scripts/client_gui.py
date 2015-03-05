@@ -311,7 +311,7 @@ class AutomaticControls(ttk.Frame):
 
     def add_to_list(self, *args):
         u"""Добавляет движение в список движений."""
-        window = MotionSelectionWindow(self)
+        window = MotionAdditionWindow(self)
         points = self.pt_list.get()
         points = points[1:-1]
         points = points.split()
@@ -334,7 +334,7 @@ class AutomaticControls(ttk.Frame):
             points = ' '.join(points)
             self.pt_list.set(points)
 
-class MotionSelectionWindow(tk.Toplevel):
+class MotionAdditionWindow(tk.Toplevel):
 
     u"""Окно добавления движения."""
 
@@ -343,30 +343,37 @@ class MotionSelectionWindow(tk.Toplevel):
         tk.Toplevel.__init__(self, parent)
         self.title(u'Выбор движения')
         self.resizable(0, 0)
-        self.widgets_frame = tk.Frame(self)
-        self.widgets_frame.grid(column=0, row=0)
-        ttk.Label(self.widgets_frame,
+        self.notebook = ttk.Notebook(self)
+        self.notebook.grid(column=0, row=0, sticky='nswe')
+        self.base_motion = BaseMotionAddition(self)
+        self.notebook.add(self.base_motion, text=u'Платформа')
+
+class BaseMotionAddition(ttk.Frame):
+    def __init__(self, parent):
+        ttk.Frame.__init__(self, parent)
+        self.grid(column=0, row=0)
+        ttk.Label(self,
                   text=u'Имя:').grid(column=0, row=0, sticky='e')
-        ttk.Entry(self.widgets_frame).grid(column=1, row=0, sticky='w')
-        ttk.Label(self.widgets_frame,
+        ttk.Entry(self).grid(column=1, row=0, sticky='w')
+        ttk.Label(self,
                   text=u'Тип движения:').grid(column=2, row=0, sticky='e')
-        ttk.Combobox(self.widgets_frame).grid(column=3, row=0)
-        ttk.Label(self.widgets_frame,
+        ttk.Combobox(self).grid(column=3, row=0)
+        ttk.Label(self,
                   text=u'P1:',
                   width=3).grid(column=4, row=0, sticky='e')
-        ttk.Entry(self.widgets_frame).grid(column=5, row=0, sticky='w')
-        ttk.Button(self.widgets_frame, text='Touch Up').grid(column=5, row=1)
-        ttk.Label(self.widgets_frame,
+        ttk.Entry(self).grid(column=5, row=0, sticky='w')
+        ttk.Button(self, text='Touch Up').grid(column=5, row=1)
+        ttk.Label(self,
                   text=u'P2:',
                   width=3).grid(column=6, row=0, sticky='e')
-        ttk.Entry(self.widgets_frame).grid(column=7, row=0, sticky='w')
-        ttk.Button(self.widgets_frame, text='Touch Up').grid(column=7, row=1)
-        ttk.Button(self.widgets_frame, text=u'Сохранить').grid(row=2, column=0)
-        cancel_button = ttk.Button(self.widgets_frame,
+        ttk.Entry(self).grid(column=7, row=0, sticky='w')
+        ttk.Button(self, text='Touch Up').grid(column=7, row=1)
+        ttk.Button(self, text=u'Сохранить').grid(row=2, column=0)
+        cancel_button = ttk.Button(self,
                                    text=u'Отмена',
                                    command=self.cancel)
         cancel_button.grid(row=2, column=1)
-        for child in self.widgets_frame.winfo_children():
+        for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
     def cancel(self, *args):
