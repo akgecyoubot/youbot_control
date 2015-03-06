@@ -79,18 +79,47 @@ class Base(object):
         u"""Return list with odometry.
 
         Returns:
-            tuple: (X, Y, Z, rotation X, rotation Y, rotation Z)
+            tuple: (X, Y, rotation Z)
 
         Возвращает одометрию.
 
         Возвращает:
-            кортеж (X, Y, Z, поворот по X, поворот по Y, поворот по Z)
+            кортеж (X, Y, поворот по Z)
         """
         position = ()
         position += self.odometry.pose.pose.position.x,
         position += self.odometry.pose.pose.position.y,
         position += self.odometry.pose.pose.orientation.z,
         return position
+
+    def lin_goto(self, *args):
+        # Задаём погрешность
+        psi = 0.1
+        # Получаем текущие координаты
+        current_position = self.get_odometry()
+        # Вычисляем дельту
+        delta = [args[i] - current_position[i] for i in range(3)]
+        # Пока дельта > psi:
+        while abs(delta[0]) >= psi or abs(delta[1]) >= psi:
+            # Обновляем текущие координаты
+            current_position = self.get_odometry()
+            # Обновляем дельту
+            delta = [args[i] - current_position[i] for i in range(3)]
+            print 'd: ', delta
+            # вычислаяем скорость
+            velocity = []
+            for d in delta:
+                if abs(d) > 1:
+                    velocity.append(d/abs(d))
+                elif 0 < abs(d) <= 1:
+                    velocity.append(d)
+                else:
+                    velocity.append(0)
+            print 'v: ', velocity
+            # Отправляем сообщение с вычесленной скоростью
+            self.set_velocity(*velocity)
+        # Обнуляем скорость
+        self.set_velocity()
 
 class Arm(object):
 
@@ -249,6 +278,11 @@ def test():
                                 0.0221239,
                                 0.11062)
 
+def test_goto():
+    r = YouBot()
+    r.base.lin_goto(1, 0, 0)
+    r.base.lin_goto(0, 0, 0)
+
 
 if __name__ == '__main__':
-    test()
+    test_goto()
