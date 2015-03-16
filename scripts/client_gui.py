@@ -395,6 +395,31 @@ def key_pressed(event):
         R1.base.set_velocity(ang_z=1)
     elif event.char == 'o':
         R1.base.set_velocity(ang_z=-1)
+    # Arm movement
+    if event.char == '1':
+        R1.arm.set_joints_velocities(1, 0, 0, 0, 0)
+    elif event.char == 'q':
+        R1.arm.set_joints_velocities(-1, 0, 0, 0, 0)
+    if event.char == '2':
+        R1.arm.set_joints_velocities(0, 1, 0, 0, 0)
+    elif event.char == 'w':
+        R1.arm.set_joints_velocities(0, -1, 0, 0, 0)
+    if event.char == '3':
+        R1.arm.set_joints_velocities(0, 0, 1, 0, 0)
+    elif event.char == 'e':
+        R1.arm.set_joints_velocities(0, 0, -1, 0, 0)
+    if event.char == '4':
+        R1.arm.set_joints_velocities(0, 0, 0, 1, 0)
+    elif event.char == 'r':
+        R1.arm.set_joints_velocities(0, 0, 0, -1, 0)
+    if event.char == '5':
+        R1.arm.set_joints_velocities(0, 0, 0, 0, 1)
+    elif event.char == 't':
+        R1.arm.set_joints_velocities(0, 0, 0, 0, -1)
+    if event.char == 'a':
+        R1.arm.gripper.set_gripper_state(True)
+    if event.char == 's':
+        R1.arm.gripper.set_gripper_state(False)
 
 def key_released(event):
     u"""Обрабатывает отпускание кнопки клавиатуры."""
