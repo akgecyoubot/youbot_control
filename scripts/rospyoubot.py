@@ -31,187 +31,218 @@ class YouBot(object):
         Конструктор класса.
         """
         rospy.init_node('rospyoubot')
-        self.arm = YouBot.Arm()
-        self.base = YouBot.Base()
+        self.arm = Arm()
+        self.base = Base()
 
-    class Base(object):
+class Base(object):
 
-        """Control youBot Base."""
+    """Control youBot Base."""
 
-        def __init__(self):
-            u"""Class constructor.
+    def __init__(self):
+        u"""Class constructor.
 
-            Конструктор класса.
-            """
-            self.velocity = Twist()
-            self.odometry = Odometry()
-            self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
-            rospy.Subscriber('/odom', Odometry, self._update_odometry)
+        Конструктор класса.
+        """
+        self.velocity = Twist()
+        self.odometry = Odometry()
+        self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
+        rospy.Subscriber('/odom', Odometry, self._update_odometry)
 
-        def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
-            u"""Set base velocity vector.
+    def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
+        u"""Set base velocity vector.
 
-            Arguments:
-                lin_x -- linear velocity along X axis (default 0)
-                lin_y -- linear velocity along Y axis (default 0)
-                ang_z -- angular velocity around Z axis (default 0)
+        Arguments:
+            lin_x -- linear velocity along X axis (default 0)
+            lin_y -- linear velocity along Y axis (default 0)
+            ang_z -- angular velocity around Z axis (default 0)
 
-            Задаёт вектор скорости базы.
+        Задаёт вектор скорости базы.
 
-            Аргументы:
-                lin_x -- линейная скорость вдоль оси Х (default 0)
-                lin_y -- линейная скорость вдоль оси Y (default 0)
-                ang_z -- угловая скорость вдоль оси Z (default 0)
-            """
-            self.velocity.linear.x = lin_x
-            self.velocity.linear.y = lin_y
-            self.velocity.angular.z = ang_z
-            self.velocity_publisher.publish(self.velocity)
+        Аргументы:
+            lin_x -- линейная скорость вдоль оси Х (default 0)
+            lin_y -- линейная скорость вдоль оси Y (default 0)
+            ang_z -- угловая скорость вдоль оси Z (default 0)
+        """
+        self.velocity.linear.x = lin_x
+        self.velocity.linear.y = lin_y
+        self.velocity.angular.z = ang_z
+        self.velocity_publisher.publish(self.velocity)
 
-        def _update_odometry(self, data):
-            u"""Update odometry every time message is recieved.
+    def _update_odometry(self, data):
+        u"""Update odometry every time message is recieved.
 
-            Обновляет одометрию при поступлении сообщения.
-            """
-            self.odometry = data
+        Обновляет одометрию при поступлении сообщения.
+        """
+        self.odometry = data
 
-        def get_odometry(self):
-            u"""Return list with odometry.
+    def get_odometry(self):
+        u"""Return list with odometry.
 
-            Returns:
-                tuple: (X, Y, Z, rotation X, rotation Y, rotation Z)
+        Returns:
+            tuple: (X, Y, rotation Z)
 
-            Возвращает одометрию.
+        Возвращает одометрию.
 
-            Возвращает:
-                кортеж (X, Y, Z, поворот по X, поворот по Y, поворот по Z)
-            """
-            position = ()
-            position += self.odometry.pose.pose.position.x,
-            position += self.odometry.pose.pose.position.y,
-            position += self.odometry.pose.pose.orientation.z,
-            return position
+        Возвращает:
+            кортеж (X, Y, поворот по Z)
+        """
+        position = ()
+        position += self.odometry.pose.pose.position.x,
+        position += self.odometry.pose.pose.position.y,
+        position += self.odometry.pose.pose.orientation.z,
+        return position
 
-    class Arm(object):
+    def lin_goto(self, speed=1, *args):
+        u"""Передвигает базу youBot'а в точку с координатами (X,Y,Phi)."""
+        # Задаём погрешность
+        psi = 0.1
+        # Получаем текущие координаты
+        current_position = self.get_odometry()
+        # Вычисляем дельту
+        delta = [args[i] - current_position[i] for i in range(3)]
+        # Пока дельта > psi:
+        while abs(delta[0]) >= psi or abs(delta[1]) >= psi:
+            # Обновляем текущие координаты
+            current_position = self.get_odometry()
+            # Обновляем дельту
+            delta = [args[i] - current_position[i] for i in range(3)]
+            print 'd: ', delta
+            # вычислаяем скорость
+            velocity = []
+            for d in delta:
+                if abs(d) > 1:
+                    velocity.append(d / abs(d) * speed)
+                elif 0 < abs(d) <= 1:
+                    velocity.append(d)
+                else:
+                    velocity.append(0)
+            print 'v: ', velocity
+            # Отправляем сообщение с вычесленной скоростью
+            self.set_velocity(*velocity)
+        # Обнуляем скорость
+        self.set_velocity()
 
-        """Control youBot Arm."""
+class Arm(object):
 
-        def __init__(self):
-            u"""Class constructor.
+    """Control youBot Arm."""
 
-            Конструктор класса.
-            """
-            self.gripper = YouBot.Gripper()
-            self.joints_positions = JointPositions()
-            self.current_joints_states = JointState()
-            self.current_joints_states.position = [0.0 for i in range(5)]
-            self.joints_velocities = JointVelocities()
-            self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
-                                                              JointPositions)
-            self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command',
-                                                               JointVelocities)
-            rospy.Subscriber('/joint_states',
-                             JointState,
-                             self._update_joints_states)
+    def __init__(self):
+        u"""Class constructor.
 
-        def set_joints_angles(self, *args):
-            u"""Set arm joints to defined angles in radians.
+        Конструктор класса.
+        """
+        self.gripper = Gripper()
+        self.joints_positions = JointPositions()
+        self.current_joints_states = JointState()
+        self.current_joints_states.position = [0.0 for i in range(5)]
+        self.joints_velocities = JointVelocities()
+        self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
+                                                          JointPositions)
+        self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command',
+                                                           JointVelocities)
+        rospy.Subscriber('/joint_states',
+                         JointState,
+                         self._update_joints_states)
 
-            Arguments:
-                *args -- joints angles (j1, j2, j3, j4, j5)
+    def set_joints_angles(self, *args):
+        u"""Set arm joints to defined angles in radians.
 
-            Устанавливает углы поворота степеней подвижности в радианах.
+        Arguments:
+            *args -- joints angles (j1, j2, j3, j4, j5)
 
-            Аргументы:
-                *args -- уголы соотвествующих степеней (j1, j2, j3, j4, j5)
-            """
-            assert len(args) <= 5
-            self.joints_positions.positions = []
-            for i in range(5):
-                tmp = JointValue()
-                tmp.timeStamp = rospy.Time.now()
-                tmp.joint_uri = 'arm_joint_{}'.format(i+1)
-                tmp.unit = 'rad'
-                tmp.value = args[i]
-                self.joints_positions.positions.append(tmp)
-            self.joints_positions_publisher.publish(self.joints_positions)
+        Устанавливает углы поворота степеней подвижности в радианах.
 
-        def set_joints_velocities(self, *args):
-            u"""Set velocity for each joint.
+        Аргументы:
+            *args -- уголы соотвествующих степеней (j1, j2, j3, j4, j5)
+        """
+        assert len(args) <= 5
+        self.joints_positions.positions = []
+        for i in range(5):
+            tmp = JointValue()
+            tmp.timeStamp = rospy.Time.now()
+            tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
+            tmp.unit = 'rad'
+            tmp.value = args[i]
+            self.joints_positions.positions.append(tmp)
+        self.joints_positions_publisher.publish(self.joints_positions)
 
-            Arguments:
-                *args -- velocity for each joint (j1, j2, j3, j4, j5)
+    def set_joints_velocities(self, *args):
+        u"""Set velocity for each joint.
 
-            Устанавливает скорость каждой степени подвижности в радианах/с.
+        Arguments:
+            *args -- velocity for each joint (j1, j2, j3, j4, j5)
 
-            Аргументы:
-                *args -- скорости соотвествующих степеней (j1, j2, j3, j4, j5)
-            """
-            assert len(args) == 5
-            self.joints_velocities.velocities = []
-            for i in range(len(args)):  # I know it's unpythonic, sorry
-                tmp = JointValue()
-                tmp.timeStamp = rospy.Time.now()
-                tmp.joint_uri = 'arm_joint_{}'.format(i+1)
-                tmp.unit = 's^-1 rad'
-                tmp.value = args[i]
-                self.joints_velocities.velocities.append(tmp)
-            self.joints_velocities_publisher.publish(self.joints_velocities)
+        Устанавливает скорость каждой степени подвижности в радианах/с.
 
-        def _update_joints_states(self, joints_data):
-            """Update joints states when info is received."""
-            self.current_joints_states = joints_data
+        Аргументы:
+            *args -- скорости соотвествующих степеней (j1, j2, j3, j4, j5)
+        """
+        assert len(args) == 5
+        self.joints_velocities.velocities = []
+        for i in range(len(args)):  # I know it's unpythonic, sorry
+            tmp = JointValue()
+            tmp.timeStamp = rospy.Time.now()
+            tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
+            tmp.unit = 's^-1 rad'
+            tmp.value = args[i]
+            self.joints_velocities.velocities.append(tmp)
+        self.joints_velocities_publisher.publish(self.joints_velocities)
 
-        def get_current_joints_positions(self):
-            """Return list of current joints angles."""
-            return self.current_joints_states.position
+    def _update_joints_states(self, joints_data):
+        """Update joints states when info is received."""
+        self.current_joints_states = joints_data
 
-    class Gripper(object):
+    def get_current_joints_positions(self):
+        """Return list of current joints angles."""
+        return self.current_joints_states.position
 
-        """Gripper class."""
+class Gripper(object):
 
-        def __init__(self):
-            """Gripper constructor."""
-            self.gripper_position = JointPositions()
-            self.gripper_position_publisher = rospy.Publisher('arm_1/gripper_controller/position_command',
-                                                              JointPositions)
+    """Gripper class."""
 
-        def set_gripper_state(self, open_gripper=True):
-            """Open/close gripper.
+    def __init__(self):
+        """Gripper constructor."""
+        self.gripper_position = JointPositions()
+        self.gripper_position_publisher = rospy.Publisher('arm_1/gripper_controller/position_command',
+                                                          JointPositions)
 
-            Arguments:
-                open_gripper (bool): if True - opens gripper, if False - otherwise
-            """
-            self.gripper_position.positions = []
-            if open_gripper:
-                # Open gripper
-                tmp_gripper_position_r = JointValue()
-                tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
-                tmp_gripper_position_r.value = 0.011499
-                tmp_gripper_position_r.unit = 'm'
-                tmp_gripper_position_r.timeStamp = rospy.Time.now()
-                self.gripper_position.positions.append(tmp_gripper_position_r)
-                tmp_gripper_position_l = JointValue()
-                tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
-                tmp_gripper_position_l.value = 0.011499
-                tmp_gripper_position_l.unit = 'm'
-                tmp_gripper_position_l.timeStamp = rospy.Time.now()
-                self.gripper_position.positions.append(tmp_gripper_position_l)
-            else:
-                # Close gripper
-                tmp_gripper_position_r = JointValue()
-                tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
-                tmp_gripper_position_r.value = 0
-                tmp_gripper_position_r.unit = 'm'
-                tmp_gripper_position_r.timeStamp = rospy.Time.now()
-                self.gripper_position.positions.append(tmp_gripper_position_r)
-                tmp_gripper_position_l = JointValue()
-                tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
-                tmp_gripper_position_l.value = 0
-                tmp_gripper_position_l.unit = 'm'
-                tmp_gripper_position_l.timeStamp = rospy.Time.now()
-                self.gripper_position.positions.append(tmp_gripper_position_l)
-            self.gripper_position_publisher.publish(self.gripper_position)
+    def set_gripper_state(self, open_gripper=True):
+        """Open/close gripper.
+
+        Arguments:
+            open_gripper (bool): if True - opens gripper, if False - otherwise
+        """
+        self.gripper_position.positions = []
+        if open_gripper:
+            # Open gripper
+            tmp_gripper_position_r = JointValue()
+            tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
+            tmp_gripper_position_r.value = 0.011499
+            tmp_gripper_position_r.unit = 'm'
+            tmp_gripper_position_r.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_r)
+            tmp_gripper_position_l = JointValue()
+            tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
+            tmp_gripper_position_l.value = 0.011499
+            tmp_gripper_position_l.unit = 'm'
+            tmp_gripper_position_l.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_l)
+        else:
+            # Close gripper
+            tmp_gripper_position_r = JointValue()
+            tmp_gripper_position_r.joint_uri = 'gripper_finger_joint_r'
+            tmp_gripper_position_r.value = 0
+            tmp_gripper_position_r.unit = 'm'
+            tmp_gripper_position_r.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_r)
+            tmp_gripper_position_l = JointValue()
+            tmp_gripper_position_l.joint_uri = 'gripper_finger_joint_l'
+            tmp_gripper_position_l.value = 0
+            tmp_gripper_position_l.unit = 'm'
+            tmp_gripper_position_l.timeStamp = rospy.Time.now()
+            self.gripper_position.positions.append(tmp_gripper_position_l)
+        self.gripper_position_publisher.publish(self.gripper_position)
+
 def test():
     """Test rospyoubot functionality."""
     robot = YouBot()
@@ -248,6 +279,11 @@ def test():
                                 0.0221239,
                                 0.11062)
 
+def test_goto():
+    r = YouBot()
+    r.base.lin_goto(1, 0, 0)
+    r.base.lin_goto(0, 0, 0)
+
 
 if __name__ == '__main__':
-    test()
+    test_goto()
