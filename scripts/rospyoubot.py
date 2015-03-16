@@ -92,7 +92,8 @@ class Base(object):
         position += self.odometry.pose.pose.orientation.z,
         return position
 
-    def lin_goto(self, *args):
+    def lin_goto(self, speed=1, *args):
+        u"""Передвигает базу youBot'а в точку с координатами (X,Y,Phi)."""
         # Задаём погрешность
         psi = 0.1
         # Получаем текущие координаты
@@ -110,7 +111,7 @@ class Base(object):
             velocity = []
             for d in delta:
                 if abs(d) > 1:
-                    velocity.append(d/abs(d))
+                    velocity.append(d / abs(d) * speed)
                 elif 0 < abs(d) <= 1:
                     velocity.append(d)
                 else:
@@ -159,7 +160,7 @@ class Arm(object):
         for i in range(5):
             tmp = JointValue()
             tmp.timeStamp = rospy.Time.now()
-            tmp.joint_uri = 'arm_joint_{}'.format(i+1)
+            tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
             tmp.unit = 'rad'
             tmp.value = args[i]
             self.joints_positions.positions.append(tmp)
@@ -181,7 +182,7 @@ class Arm(object):
         for i in range(len(args)):  # I know it's unpythonic, sorry
             tmp = JointValue()
             tmp.timeStamp = rospy.Time.now()
-            tmp.joint_uri = 'arm_joint_{}'.format(i+1)
+            tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
             tmp.unit = 's^-1 rad'
             tmp.value = args[i]
             self.joints_velocities.velocities.append(tmp)
