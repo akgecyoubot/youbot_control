@@ -49,16 +49,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  Num.msg
-  Speed.msg
-  Joy.msg
 )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  AddTwoInts.srv
-)
+## add_service_files(
+## FILES
+## )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -88,7 +84,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES pybotserver
-   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs brics_actuator
+   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs brics_actuator 
 #  DEPENDS system_lib
 )
 
