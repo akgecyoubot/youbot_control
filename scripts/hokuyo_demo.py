@@ -18,8 +18,8 @@ def callback(scan):
             break
     else:
         vel.linear.x = 0.1
-        vel.linear.y = 0.1
-        vel.angular.z = 0.1
+        vel.linear.y = 0
+        vel.angular.z = 0
         VEL_PUB.publish(vel)
 
 
