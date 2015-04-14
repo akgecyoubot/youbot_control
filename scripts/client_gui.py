@@ -7,11 +7,6 @@ import ttk
 import rospyoubot
 
 
-BASE_VELOCITY = 1
-ARM_VELOCITY = 1
-R1 = rospyoubot.YouBot()
-ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
-ODOMETRY = [tk.StringVar() for i in range(3)]
 
 class MainApplication(ttk.Frame):
 
@@ -450,6 +445,11 @@ if __name__ == '__main__':
     ROOT.title("youBot control")
     ROOT.resizable(1, 0)
     ROOT.columnconfigure(0, weight=1)
+    BASE_VELOCITY = 1
+    ARM_VELOCITY = 1
+    R1 = rospyoubot.YouBot()
+    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
+    ODOMETRY = [tk.StringVar() for i in range(3)]
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
     ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())

@@ -92,8 +92,9 @@ class Base(object):
         position += self.odometry.pose.pose.orientation.z,
         return position
 
-    def lin_goto(self, speed=1, *args):
+    def lin_goto(self, *args):
         u"""Передвигает базу youBot'а в точку с координатами (X,Y,Phi)."""
+        speed = 1
         # Задаём погрешность
         psi = 0.1
         # Получаем текущие координаты
