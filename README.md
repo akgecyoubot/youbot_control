@@ -1,4 +1,3 @@
-hello!
 # pybotserver
 My KUKA youBot project. Server side.
 
