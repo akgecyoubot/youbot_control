@@ -7,6 +7,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from brics_actuator.msg import JointPositions, JointValue, JointVelocities
 from sensor_msgs.msg import JointState
+from math import cos, sin
 
 
 class YouBot(object):
@@ -92,36 +93,36 @@ class Base(object):
         position += self.odometry.pose.pose.orientation.z,
         return position
 
-    def lin_goto(self, *args):
-        u"""Передвигает базу youBot'а в точку с координатами (X,Y,Phi)."""
-        speed = 1
-        # Задаём погрешность
+    def lin(self, Xwp, Ywp, Phip, speed=0.5):
+        u"""Move youBot base to the point with coordinate (Xwp, Ywp)."""
         psi = 0.1
-        # Получаем текущие координаты
-        current_position = self.get_odometry()
-        # Вычисляем дельту
-        delta = [args[i] - current_position[i] for i in range(3)]
-        # Пока дельта > psi:
-        while abs(delta[0]) >= psi or abs(delta[1]) >= psi:
+        Xwr, Ywr, Phir = self.get_odometry()
+        while abs(Phir) >= psi/10:
             # Обновляем текущие координаты
-            current_position = self.get_odometry()
-            # Обновляем дельту
-            delta = [args[i] - current_position[i] for i in range(3)]
-            print 'd: ', delta
+            Phir = self.get_odometry()[2]
+            print "Phi={}".format(Phir)
             # вычислаяем скорость
-            velocity = []
-            for d in delta:
-                if abs(d) > 1:
-                    velocity.append(d / abs(d) * speed)
-                elif 0 < abs(d) <= 1:
-                    velocity.append(d)
-                else:
-                    velocity.append(0)
-            print 'v: ', velocity
+            delta = 0 - Phir
+            ang_z = 0
+            if abs(delta) > 1:
+                ang_z = (delta / abs(delta))
+            elif 0 < abs(delta) <= 1:
+                ang_z = delta
+            else:
+                ang_z = 0
+            print "V={}".format(ang_z)
             # Отправляем сообщение с вычесленной скоростью
-            self.set_velocity(*velocity)
-        # Обнуляем скорость
-        self.set_velocity()
+            self.set_velocity(0, 0, ang_z)
+        while abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi:
+            Xwr, Ywr, Phir = self.get_odometry()
+            print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
+            Xyp, Yyp = transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
+            print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
+            Vx, Vy = calculate_velocity(Xyp, Yyp)
+            print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
+            print '____________________________________________________________'
+            self.set_velocity(Vx, Vy, 0)
+        self.set_velocity(0, 0, 0)
 
 class Arm(object):
 
@@ -244,47 +245,21 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def test():
-    """Test rospyoubot functionality."""
-    robot = YouBot()
-    timer = rospy.Rate(0.25)
-    timer.sleep()
-    print "Testing base velocities command..."
-    robot.base.set_velocity(0.1, 0.1, -0.1)
-    timer.sleep()
-    robot.base.set_velocity()
-    timer.sleep()
-    print "Testing gripper position command..."
-    robot.arm.gripper.set_gripper_state(False)
-    timer.sleep()
-    robot.arm.gripper.set_gripper_state(True)
-    timer.sleep()
-    print "Testing arm position command..."
-    robot.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
-    timer.sleep()
-    robot.arm.set_joints_angles(0.0100693,
-                                0.0100693,
-                                -0.015708,
-                                0.0221239,
-                                0.11062)
-    timer.sleep()
-    print "Testing arm velocities commad..."
-    robot.arm.set_joints_velocities(0.1, 0.1, -0.1, 0.1, 0.1)
-    timer.sleep()
-    robot.arm.set_joints_velocities(0, 0, 0, 0, 0)
-    timer.sleep()
-    print "Going home..."
-    robot.arm.set_joints_angles(0.0100693,
-                                0.0100693,
-                                -0.015708,
-                                0.0221239,
-                                0.11062)
+def calculate_velocity(*args):
+    """Return velocity vector."""
+    velocity = []
+    for v in args:
+        if abs(v) > 1:
+            velocity.append(v / abs(v))
+        elif 0 < abs(v) <= 1:
+            velocity.append(v)
+        else:
+            velocity.append(0)
+    # Vyx = 1 if Xp > 1 else Xp
+    # Vyy = 1 if Yp > 1 else Yp
+    return tuple(velocity)
 
-def test_goto():
-    r = YouBot()
-    r.base.lin_goto(1, 0, 0)
-    r.base.lin_goto(0, 0, 0)
-
-
-if __name__ == '__main__':
-    test_goto()
+def transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir):
+    Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
+    Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
+    return Xyp, Yyp
