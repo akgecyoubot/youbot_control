@@ -9,7 +9,7 @@ import unittest
 
 class BaseTestCase(unittest.TestCase):
     def test_calculate_velocity(self):
-        func = rospyoubot.calculate_velocity
+        func = rospyoubot._calculate_velocity
         cases = {(0, 0): (0, 0),
                  (5, 0): (1, 0),
                  (0, 5): (0, 1),
@@ -26,7 +26,7 @@ class BaseTestCase(unittest.TestCase):
                              'Wrong velocity calculated.')
 
     def test_transform_coordinates(self):
-        func = rospyoubot.transform_coordinates
+        func = rospyoubot._transform_coordinates
         cases = {(0, 0, 0, 0, 0): (0, 0),
                  (1, 0, 0, 0, 0): (1, 0),
                  (0, 1, 0, 0, 0): (0, 1),
@@ -42,10 +42,14 @@ class BaseTestCase(unittest.TestCase):
                             (5, 5, 0, 0, radians(70)): (6.41, -2.99),
                             (5, 5, 0, 0, radians(190)): (-5.79, -4.06),
                             (5, 5, 0, 0, radians(245)): (-6.64, 2.42),
-                            (5, 5, 3, 2, radians(35)): (1.31, -3.359),
-                            (5, 5, 3, 2, radians(120)): (-3.232, -1.598),
-                            (5, 5, 3, 2, radians(190)): (-2.135, 2.905),
-                            (5, 5, 3, 2, radians(310)): (3.46, 1.013)}
+                            (7, -8, -2, 3, radians(25)): (3.51, -13.77),
+                            (7, -8, -2, 3, radians(110)): (-13.41, -4.7),
+                            (7, -8, -2, 3, radians(150)): (-13.29, 5.03),
+                            (7, -8, -2, 3, radians(230)): (2.64, 13.97),
+                            (7, -8, 4, -3, radians(20)): (1.11, -5.72),
+                            (7, -8, 4, -3, radians(65)): (-3.26, -4.83),
+                            (7, -8, 4, -3, radians(155)): (-4.83, 3.26),
+                            (7, -8, 4, -3, radians(-108)): (3.83, 4.4)}
         for test in cases.keys():
             self.assertEqual(func(*test),
                              cases[test])
