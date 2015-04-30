@@ -34,6 +34,17 @@ class YouBot(object):
         rospy.init_node('rospyoubot')
         self.arm = Arm()
         self.base = Base()
+        rospy.on_shutdown(self.emergencyStop)
+
+    def emergencyStop(self):
+        """Stop youBot, and move arm to default position."""
+        self.base.set_velocity(0, 0, 0)
+        self.arm.set_joints_velocities(0, 0, 0, 0, 0)
+        # self.arm.set_joints_angles(0.0100693,
+                                   # 0.0100693,
+                                   # -0.015708,
+                                   # 0.0221239,
+                                   # 0.11062)
 
 class Base(object):
 
@@ -47,6 +58,7 @@ class Base(object):
         self.velocity = Twist()
         self.odometry = Odometry()
         self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
+        self.rate = rospy.Rate(10)
         rospy.Subscriber('/odom', Odometry, self._update_odometry)
 
     def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
@@ -94,34 +106,44 @@ class Base(object):
         return position
 
     def lin(self, Xwp, Ywp, Phip, speed=0.5):
-        u"""Move youBot base to the point with coordinate (Xwp, Ywp)."""
+        u"""
+        Move youBot base to the point with coordinate (Xwp, Ywp).
+
+        Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
+        Phip - Angle between Odometry X axis and robot X axis (Radians)
+        """
         psi = 0.1
         Xwr, Ywr, Phir = self.get_odometry()
-        while abs(Phir) >= psi/10:
-            # Обновляем текущие координаты
-            Phir = self.get_odometry()[2]
-            print "Phi={}".format(Phir)
-            # вычислаяем скорость
-            delta = 0 - Phir
-            ang_z = 0
-            if abs(delta) > 1:
-                ang_z = (delta / abs(delta))
-            elif 0 < abs(delta) <= 1:
-                ang_z = delta
-            else:
-                ang_z = 0
-            print "V={}".format(ang_z)
-            # Отправляем сообщение с вычесленной скоростью
-            self.set_velocity(0, 0, ang_z)
-        while abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi:
+        while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
             Xwr, Ywr, Phir = self.get_odometry()
             print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
-            Xyp, Yyp = transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
+            Xyp, Yyp = _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
             print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
-            Vx, Vy = calculate_velocity(Xyp, Yyp)
+            Vx, Vy = _calculate_velocity(Xyp, Yyp)
+            Vx *= speed
+            Vy *= speed
             print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
             print '____________________________________________________________'
             self.set_velocity(Vx, Vy, 0)
+            # self.rate.sleep()
+        while abs(Phip - Phir) >= psi/2 and not rospy.is_shutdown():
+            # Обновляем текущие координаты
+            Phir = self.get_odometry()[2]
+            print "Phir={}".format(Phir)
+            # вычислаяем скорость
+            delta = Phip - Phir
+            print delta
+            ang_z = delta
+            # if abs(delta) > 1:
+            # ang_z = (delta / abs(delta))
+            # elif 0 < abs(delta) <= 1:
+                # ang_z = round(delta, 2)
+            # else:
+                # ang_z = 0
+            print "V={}".format(ang_z)
+            # Отправляем сообщение с вычесленной скоростью
+            self.set_velocity(0, 0, ang_z)
+            # self.rate.sleep()
         self.set_velocity(0, 0, 0)
 
 class Arm(object):
@@ -245,21 +267,25 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def calculate_velocity(*args):
+def _calculate_velocity(*args):
     """Return velocity vector."""
     velocity = []
     for v in args:
         if abs(v) > 1:
             velocity.append(v / abs(v))
         elif 0 < abs(v) <= 1:
-            velocity.append(v)
+            velocity.append(round(v, 2))
         else:
             velocity.append(0)
     # Vyx = 1 if Xp > 1 else Xp
     # Vyy = 1 if Yp > 1 else Yp
     return tuple(velocity)
 
-def transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir):
-    Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
-    Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
+def _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir):
+    Xwp -= Xwr
+    Ywp -= Ywr
+    Xyp = Xwp * cos(Phir) + Ywp * sin(Phir)
+    Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir)
+    # Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
+    # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
     return Xyp, Yyp
