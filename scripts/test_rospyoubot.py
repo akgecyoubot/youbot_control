@@ -4,7 +4,7 @@
 PKG = 'pybotserver'
 
 import rospyoubot
-from math import radians
+from math import radians, sqrt, pow
 import unittest
 
 class BaseTestCase(unittest.TestCase):
@@ -13,17 +13,15 @@ class BaseTestCase(unittest.TestCase):
         cases = {(0, 0): (0, 0),
                  (5, 0): (1, 0),
                  (0, 5): (0, 1),
-                 (5, 5): (1, 1),
                  (-5, 0): (-1, 0),
-                 (0, -5): (0, -1),
-                 (-5, -5): (-1, -1),
-                 (0.1, 0): (0.1, 0),
-                 (0, 0.1): (0, 0.1),
-                 (0.1, 0.1): (0.1, 0.1)}
+                 (0, -5): (0, -1)}
         for test in cases.keys():
-            self.assertEqual(func(*test),
-                             cases[test],
-                             'Wrong velocity calculated.')
+            real = func(*test)
+            expected = cases[test]
+            self.assertEqual(real,
+                             expected)
+            if expected != (0, 0):
+                self.assertEqual(sqrt(pow(real[0], 2) + pow(real[1], 2)), 1)
 
     def test_transform_coordinates(self):
         func = rospyoubot._transform_coordinates
