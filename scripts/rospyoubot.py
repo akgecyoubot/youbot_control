@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from brics_actuator.msg import JointPositions, JointValue, JointVelocities
 from sensor_msgs.msg import JointState
-from math import cos, sin
+from math import cos, sin, acos, pow, sqrt
 
 
 class YouBot(object):
@@ -102,7 +102,7 @@ class Base(object):
         position = ()
         position += self.odometry.pose.pose.position.x,
         position += self.odometry.pose.pose.position.y,
-        position += self.odometry.pose.pose.orientation.z,
+        position += 2*acos(self.odometry.pose.pose.orientation.w),
         return position
 
     def lin(self, Xwp, Ywp, Phip, speed=0.5):
@@ -112,7 +112,7 @@ class Base(object):
         Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
         Phip - Angle between Odometry X axis and robot X axis (Radians)
         """
-        psi = 0.1
+        psi = 0.05
         Xwr, Ywr, Phir = self.get_odometry()
         while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
             Xwr, Ywr, Phir = self.get_odometry()
@@ -128,7 +128,8 @@ class Base(object):
             # self.rate.sleep()
         while abs(Phip - Phir) >= psi/2 and not rospy.is_shutdown():
             # Обновляем текущие координаты
-            Phir = self.get_odometry()[2]
+            odom = self.get_odometry()
+            Phir = odom[2]
             print "Phir={}".format(Phir)
             # вычислаяем скорость
             delta = Phip - Phir
@@ -269,17 +270,24 @@ class Gripper(object):
 
 def _calculate_velocity(*args):
     """Return velocity vector."""
-    velocity = []
+    # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
+    velocity = ()
+    try:
+        multiplier = 1 / sqrt(pow(args[0], 2) + pow(args[1],2))
+    except ZeroDivisionError:
+        multiplier = 0
+    velocity += (args[0] * multiplier),
+    velocity += (args[1] * multiplier),
+    '''
     for v in args:
         if abs(v) > 1:
-            velocity.append(v / abs(v))
+            velocity.append(v/abs(v))
         elif 0 < abs(v) <= 1:
             velocity.append(round(v, 2))
         else:
             velocity.append(0)
-    # Vyx = 1 if Xp > 1 else Xp
-    # Vyy = 1 if Yp > 1 else Yp
-    return tuple(velocity)
+    '''
+    return velocity
 
 def _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     Xwp -= Xwr
