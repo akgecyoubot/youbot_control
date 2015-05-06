@@ -213,11 +213,17 @@ class Arm(object):
         возвращает углы поворота осей в радианах
         """
 
-        Q = self.all_axis_calc(x, y, z, w, ori, elbow)
-        if self.check(Q, x, y, z):
-            self.set_joints_angles(*Q)
+        try:
+            Q = self.all_axis_calc(x, y, z, w, ori, elbow)
+        except:
+            Q = None
+        if Q != None:
+            if self.check(Q, x, y, z):
+                self.set_joints_angles(*Q)
+            else:
+                raise ValueError
         else:
-            raise ValueError
+            print 'PZDC!'
     def a1_calc(self, x, y, ori):
         """ расчет первой степени подвижности """
         if ori == 0:
