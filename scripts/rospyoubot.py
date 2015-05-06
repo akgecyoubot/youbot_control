@@ -35,6 +35,17 @@ class YouBot(object):
         rospy.init_node('rospyoubot')
         self.arm = Arm()
         self.base = Base()
+        rospy.on_shutdown(self.emergencyStop)
+
+    def emergencyStop(self):
+        """Stop youBot, and move arm to default position."""
+        self.base.set_velocity(0, 0, 0)
+        self.arm.set_joints_velocities(0, 0, 0, 0, 0)
+        # self.arm.set_joints_angles(0.0100693,
+                                   # 0.0100693,
+                                   # -0.015708,
+                                   # 0.0221239,
+                                   # 0.11062)
 
 class Base(object):
 
@@ -48,6 +59,7 @@ class Base(object):
         self.velocity = Twist()
         self.odometry = Odometry()
         self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
+        self.rate = rospy.Rate(10)
         rospy.Subscriber('/odom', Odometry, self._update_odometry)
 
     def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
@@ -91,39 +103,46 @@ class Base(object):
         position = ()
         position += self.odometry.pose.pose.position.x,
         position += self.odometry.pose.pose.position.y,
-        position += self.odometry.pose.pose.orientation.z,
+        mark = -1 if self.odometry.pose.pose.orientation.z < 0 else 1
+        position += mark * 2 * acos(self.odometry.pose.pose.orientation.w),
         return position
 
-    def lin_goto(self, *args):
-        u"""Передвигает базу youBot'а в точку с координатами (X,Y,Phi)."""
-        speed = 1
-        # Задаём погрешность
-        psi = 0.1
-        # Получаем текущие координаты
-        current_position = self.get_odometry()
-        # Вычисляем дельту
-        delta = [args[i] - current_position[i] for i in range(3)]
-        # Пока дельта > psi:
-        while abs(delta[0]) >= psi or abs(delta[1]) >= psi:
+    def lin(self, Xwp, Ywp, Phip, speed=0.5):
+        u"""
+        Move youBot base to the point with coordinate (Xwp, Ywp).
+
+        Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
+        Phip - Angle between Odometry X axis and robot X axis (Radians)
+        """
+        # TODO: Correct bug with negative Phip
+        psi = 0.05
+        Xwr, Ywr, Phir = self.get_odometry()
+        while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
+            Xwr, Ywr, Phir = self.get_odometry()
+            print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
+            Xyp, Yyp = _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir)
+            print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
+            Vx, Vy = _calculateVelocity(Xyp, Yyp)
+            Vx *= speed
+            Vy *= speed
+            print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
+            print '____________________________________________________________'
+            self.set_velocity(Vx, Vy, 0)
+            # self.rate.sleep()
+        self.set_velocity(0, 0, 0)
+        while abs(Phip - Phir) >= psi and not rospy.is_shutdown():
             # Обновляем текущие координаты
-            current_position = self.get_odometry()
-            # Обновляем дельту
-            delta = [args[i] - current_position[i] for i in range(3)]
-            print 'd: ', delta
+            Xwr, Ywr, Phir = self.get_odometry()
+            print "Goal orientation: {}".format(Phip)
             # вычислаяем скорость
-            velocity = []
-            for d in delta:
-                if abs(d) > 1:
-                    velocity.append(d / abs(d) * speed)
-                elif 0 < abs(d) <= 1:
-                    velocity.append(d)
-                else:
-                    velocity.append(0)
-            print 'v: ', velocity
+            print 'Current orientation: ', Phir
+            ang_z = _calculateAngularVelocity(Phir, Phip)
+            print "Velocity: {}".format(ang_z)
+            print '____________________________________________________________'
             # Отправляем сообщение с вычесленной скоростью
-            self.set_velocity(*velocity)
-        # Обнуляем скорость
-        self.set_velocity()
+            self.set_velocity(0, 0, ang_z)
+            # self.rate.sleep()
+        self.set_velocity(0, 0, 0)
 
 class Arm(object):
 
@@ -274,6 +293,7 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
+<<<<<<< HEAD
 def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
     def a1_calc(x, y, ori):
         """ расчет первой степени подвижности """
@@ -401,3 +421,39 @@ def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
     for i in range(5):                          # сделать, чтобы проверка осуществлялась до отправки сообщения
         Q3.append(Q0[i] + Q1[i])
     return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
+def _calculateAngularVelocity(current, goal):
+    if current > goal:
+        return -1
+    elif current < goal:
+        return 1
+    else:
+        return 0
+def _calculateVelocity(*args):
+    """Return velocity vector."""
+    # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
+    velocity = ()
+    try:
+        multiplier = 1 / sqrt(pow(args[0], 2) + pow(args[1],2))
+    except ZeroDivisionError:
+        multiplier = 0
+    velocity += (args[0] * multiplier),
+    velocity += (args[1] * multiplier),
+    '''
+    for v in args:
+        if abs(v) > 1:
+            velocity.append(v/abs(v))
+        elif 0 < abs(v) <= 1:
+            velocity.append(round(v, 2))
+        else:
+            velocity.append(0)
+    '''
+    return velocity
+
+def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
+    Xwp -= Xwr
+    Ywp -= Ywr
+    Xyp = Xwp * cos(Phir) + Ywp * sin(Phir)
+    Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir)
+    # Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
+    # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
+    return Xyp, Yyp
