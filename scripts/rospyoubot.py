@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from brics_actuator.msg import JointPositions, JointValue, JointVelocities
 from sensor_msgs.msg import JointState
-from math import cos, sin, acos, pow, sqrt
+from math import cos, sin, acos, sqrt
 
 
 class YouBot(object):
@@ -102,7 +102,8 @@ class Base(object):
         position = ()
         position += self.odometry.pose.pose.position.x,
         position += self.odometry.pose.pose.position.y,
-        position += 2*acos(self.odometry.pose.pose.orientation.w),
+        mark = -1 if self.odometry.pose.pose.orientation.z < 0 else 1
+        position += mark * 2 * acos(self.odometry.pose.pose.orientation.w),
         return position
 
     def lin(self, Xwp, Ywp, Phip, speed=0.5):
@@ -118,9 +119,9 @@ class Base(object):
         while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
             Xwr, Ywr, Phir = self.get_odometry()
             print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
-            Xyp, Yyp = _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
+            Xyp, Yyp = _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir)
             print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
-            Vx, Vy = _calculate_velocity(Xyp, Yyp)
+            Vx, Vy = _calculateVelocity(Xyp, Yyp)
             Vx *= speed
             Vy *= speed
             print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
@@ -128,20 +129,14 @@ class Base(object):
             self.set_velocity(Vx, Vy, 0)
             # self.rate.sleep()
         self.set_velocity(0, 0, 0)
-        while abs(Phip - Phir) >= psi/2 and not rospy.is_shutdown():
+        while abs(Phip - Phir) >= psi and not rospy.is_shutdown():
             # Обновляем текущие координаты
             Xwr, Ywr, Phir = self.get_odometry()
-            print "Goal= {}".format(Phir)
+            print "Goal orientation: {}".format(Phip)
             # вычислаяем скорость
-            delta = Phip - Phir
-            print 'Delta= ', delta
-            if abs(delta) > 1:
-                ang_z = (delta / abs(delta))
-            elif 0 < abs(delta) <= 1:
-                ang_z = round(delta, 2)
-            else:
-                ang_z = 0
-            print "V= {}".format(ang_z)
+            print 'Current orientation: ', Phir
+            ang_z = _calculateAngularVelocity(Phir, Phip)
+            print "Velocity: {}".format(ang_z)
             print '____________________________________________________________'
             # Отправляем сообщение с вычесленной скоростью
             self.set_velocity(0, 0, ang_z)
@@ -269,7 +264,14 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def _calculate_velocity(*args):
+def _calculateAngularVelocity(current, goal):
+    if current > goal:
+        return -1
+    elif current < goal:
+        return 1
+    else:
+        return 0
+def _calculateVelocity(*args):
     """Return velocity vector."""
     # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
     velocity = ()
@@ -290,7 +292,7 @@ def _calculate_velocity(*args):
     '''
     return velocity
 
-def _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir):
+def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     Xwp -= Xwr
     Ywp -= Ywr
     Xyp = Xwp * cos(Phir) + Ywp * sin(Phir)
