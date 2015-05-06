@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from brics_actuator.msg import JointPositions, JointValue, JointVelocities
 from sensor_msgs.msg import JointState
-from math import cos, sin, atan, radians, degrees, sqrt, pi, acos
+from math import cos, sin, atan, radians, sqrt, pi, acos
 
 
 
@@ -217,14 +217,12 @@ class Arm(object):
         """Return list of current joints angles."""
         return self.current_joints_states.position
 
-    def ptp(self, x, y, z, w, ori, elbow, a5=0):
-        u"""Формирует сообщение установки углов
-        для достижения указанной конфигурации
+    def ptp(self, x, y, z, w, ori, elbow):
+        u"""Передвигает манипулятор в заданную точку пространства.
 
-        принимает координаты и ориентацию схвата.
+        Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-
         Q = all_axis_calc(x, y, z, w, ori, elbow)
         if self.check(Q, x, y, z):
             self.set_joints_angles(*Q)
@@ -232,6 +230,7 @@ class Arm(object):
             print 'Woops!'
 
     def check(self, Q3, x, y, z):
+        u"""Проверяет заданное положение манипулятора."""
         if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
             0.0100692 <= Q3[1] <= 2.61799 and
             -0.0221239 <= Q3[2] <= -0.015708 and
@@ -292,9 +291,10 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
+def all_axis_calc(x, y, z, w, ori, elbow):
+    u"""Просчитывает положения степеней подвижности для заданного положения."""
     def a1_calc(x, y, ori):
-        """ расчет первой степени подвижности """
+        u"""Расчет первой степени подвижности."""
         if ori == 0:
         # 1. ориентация плечо вперед
             if y == 0:
@@ -326,7 +326,7 @@ def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
         return A1
 
     def a2_calc(x, y, z, w, ori, A1, A3):
-        """ расчет второй степени подвижности """
+        u"""Расчет второй степени подвижности."""
         X = x - a * cos(A1)
         Y = y + a * sin(A1)
         beta = atan((L3 * sin(A3)) / (L2 + L3 * cos(A3)))
@@ -359,7 +359,7 @@ def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
         return A2
 
     def a3_calc(x, y, z, w, ori, elbow, A1):
-        """ расчет третьей степени подвижности """
+        u"""Расчет третьей степени подвижности."""
         X = x - a * cos(A1)
         Y = y + a * sin(A1)
         if ori == 0:                                            # сделать тут try
@@ -382,7 +382,7 @@ def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
         return A3
 
     def a4_calc(w, ori, A2, A3):
-        """ расчет четвертой степени подвижности """
+        u"""Расчет четвертой степени подвижности."""
         if ori == 0:
             A4l = radians(w) - A2 - A3
         else:
@@ -403,6 +403,7 @@ def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
     L4 = 217.0
     L5 = 0.5
     a = 33.0
+    a5 = 0
     A1 = a1_calc(x, y, ori)
     A3 = a3_calc(x, y, z, w, ori, elbow, A1)
     A2 = a2_calc(x, y, z, w, ori, A1, A3)
