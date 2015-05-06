@@ -114,7 +114,6 @@ class Base(object):
         Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
         Phip - Angle between Odometry X axis and robot X axis (Radians)
         """
-        # TODO: Correct bug with negative Phip
         psi = 0.05
         Xwr, Ywr, Phir = self.get_odometry()
         while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
@@ -293,7 +292,6 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-<<<<<<< HEAD
 def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
     def a1_calc(x, y, ori):
         """ расчет первой степени подвижности """
