@@ -123,7 +123,11 @@ class JointsControlsFrame(ttk.LabelFrame):
 
     def go_candle(self, *args):
         u"""Приводит манипулятор в положение свечки."""
-        R1.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
+        R1.arm.set_joints_angles(2.9400474018133402,
+                                 1.1251030074812907,
+                                 -2.5235000069592695,
+                                 1.769468876296561,
+                                 2.838871440356912)
 
 class JointControl(ttk.Frame):
 
