@@ -112,6 +112,7 @@ class Base(object):
         Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
         Phip - Angle between Odometry X axis and robot X axis (Radians)
         """
+        # TODO: Correct bug with negative Phip
         psi = 0.05
         Xwr, Ywr, Phir = self.get_odometry()
         while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
@@ -126,22 +127,22 @@ class Base(object):
             print '____________________________________________________________'
             self.set_velocity(Vx, Vy, 0)
             # self.rate.sleep()
+        self.set_velocity(0, 0, 0)
         while abs(Phip - Phir) >= psi/2 and not rospy.is_shutdown():
             # Обновляем текущие координаты
-            odom = self.get_odometry()
-            Phir = odom[2]
-            print "Phir={}".format(Phir)
+            Xwr, Ywr, Phir = self.get_odometry()
+            print "Goal= {}".format(Phir)
             # вычислаяем скорость
             delta = Phip - Phir
-            print delta
-            ang_z = delta
-            # if abs(delta) > 1:
-            # ang_z = (delta / abs(delta))
-            # elif 0 < abs(delta) <= 1:
-                # ang_z = round(delta, 2)
-            # else:
-                # ang_z = 0
-            print "V={}".format(ang_z)
+            print 'Delta= ', delta
+            if abs(delta) > 1:
+                ang_z = (delta / abs(delta))
+            elif 0 < abs(delta) <= 1:
+                ang_z = round(delta, 2)
+            else:
+                ang_z = 0
+            print "V= {}".format(ang_z)
+            print '____________________________________________________________'
             # Отправляем сообщение с вычесленной скоростью
             self.set_velocity(0, 0, ang_z)
             # self.rate.sleep()
