@@ -146,12 +146,6 @@ class Arm(object):
         rospy.Subscriber('/joint_states',
                          JointState,
                          self._update_joints_states)
-        self.L1 = 147.0
-        self.L2 = 155.0
-        self.L3 = 135.0
-        self.L4 = 217.0
-        self.L5 = 0.5
-        self.a = 33.0
 
     def set_joints_angles(self, *args):
         u"""Set arm joints to defined angles in radians.
@@ -213,138 +207,11 @@ class Arm(object):
         возвращает углы поворота осей в радианах
         """
 
-        try:
-            Q = self.all_axis_calc(x, y, z, w, ori, elbow)
-        except:
-            Q = None
-        if Q != None:
-            if self.check(Q, x, y, z):
-                self.set_joints_angles(*Q)
-            else:
-                raise ValueError
+        Q = all_axis_calc(x, y, z, w, ori, elbow)
+        if self.check(Q, x, y, z):
+            self.set_joints_angles(*Q)
         else:
-            print 'PZDC!'
-    def a1_calc(self, x, y, ori):
-        """ расчет первой степени подвижности """
-        if ori == 0:
-        # 1. ориентация плечо вперед
-            if y == 0:
-                A1 = 0
-            elif x == 0 and y > 0:
-                A1 = -pi / 2
-            elif x == 0 and y < 0:
-                A1 = pi / 2
-            elif x > 0:
-                A1 = -atan(y / x)
-            elif x < 0 and y > 0:
-                A1 = -atan(y / x) - pi
-            elif x < 0 and y < 0:
-                A1 = -atan(y / x) + pi
-        else:
-        # 2. ориентация плечо назад
-            if y == 0:
-                A1 = pi
-            elif x == 0 and y > 0:
-                A1 = pi / 2
-            elif x == 0 and y < 0:
-                A1 = -pi / 2
-            elif x < 0:
-                A1 = -atan(y / x)
-            elif x > 0 and y >= 0:
-                A1 = -atan(y / x) + pi
-            elif x > 0 and y < 0:
-                A1 = -atan(y / x) - pi
-        return A1
-
-    def a2_calc(self, x, y, z, w, ori, A1, A3):
-        """ расчет второй степени подвижности """
-        X = x - self.a * cos(A1)
-        Y = y + self.a * sin(A1)
-        beta = atan((self.L3 * sin(A3)) / (self.L2 + self.L3 * cos(A3)))
-        alpha_v = ((z - (self.L4 + self.L5) * cos(radians(w))) - self.L1)
-        alpha_hp = (sqrt(X ** 2 + Y ** 2) - (self.L4 + self.L5) * sin(radians(w)))
-        alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (self.L4 + self.L5) * sin(radians(w)))
-
-        if ori == 0:
-        # ориентация плечо вперед
-            if  alpha_v >= 0:
-            # если 4-ая степень выше 2-ой
-                if sqrt(x ** 2 + y ** 2) >= 33:
-                    alpha = atan(alpha_hp / alpha_v)
-                else:
-                # если точка между осью А1 и осью А2
-                    alpha = atan(alpha_hm / alpha_v)
-                A2 = alpha - beta
-            else:
-            # если 4-ая степень опускается ниже 2-ой
-                alpha = atan(alpha_v / alpha_hp)
-                A2 = pi / 2 - alpha - beta
-        else:
-        # ориентация плечо назад
-            if alpha_v >= 0:
-                alpha = atan(alpha_hp / alpha_v)
-                A2 = -alpha - beta
-            else:
-                alpha = atan(alpha_v / alpha_hp)
-                A2 = -pi / 2 + alpha - beta
-        return A2
-
-    def a3_calc(self, x, y, z, w, ori, elbow, A1):
-        """ расчет третьей степени подвижности """
-        X = x - self.a * cos(A1)
-        Y = y + self.a * sin(A1)
-        if ori == 0:                                            # сделать тут try
-            if sqrt(x ** 2 + y ** 2) >= 33:
-                Cos_A3 = ((z - (self.L4 + self.L5) * cos(radians(w)) - self.L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (self.L4 + self.L5) * sin(radians(w))) ** 2 - self.L2 ** 2 - self.L3 ** 2) / (2 * self.L2 * self.L3)
-            else:
-                Cos_A3 = ((z - (self.L4 + self.L5) * cos(radians(w)) - self.L1) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (self.L4 + self.L5) * sin(radians(w))) ** 2 - self.L2 ** 2 - self.L3 ** 2) / (2 * self.L2 * self.L3)
-            if elbow == 0:
-            # локоть вверх
-                A3 = acos(Cos_A3)
-            else:
-            # локоть вниз
-                A3 = -acos(Cos_A3)
-        else:
-            Cos_A3 = ((z - (self.L4 + self.L5) * cos(radians(w)) - self.L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (self.L4 + self.L5) * sin(radians(w))) ** 2 - self.L2 ** 2 - self.L3 ** 2) / (2 * self.L2 * self.L3)
-            if elbow == 0:
-                A3 = -acos(Cos_A3)
-            else:
-                A3 = acos(Cos_A3)
-        return A3
-
-    def a4_calc(self, w, ori, A2, A3):
-        """ расчет четвертой степени подвижности """
-        if ori == 0:
-            A4l = radians(w) - A2 - A3
-        else:
-            A4l = -radians(w)- A2 - A3
-
-        if A4l > pi:
-        # перевод угла в формат от -pi до pi
-            A4 = A4l - 2 * pi
-        elif A4l < - pi:
-            A4 = A4l + 2 * pi
-        else:
-            A4 = A4l
-        return A4
-
-    def all_axis_calc(self, x, y, z, w, ori, elbow, a5=0):
-        A1 = self.a1_calc(x, y, ori)
-        A3 = self.a3_calc(x, y, z, w, ori, elbow, A1)
-        A2 = self.a2_calc(x, y, z, w, ori, A1, A3)
-        A4 = self.a4_calc(w, ori, A2, A3)
-        A5 = radians(a5)
-        a01 = radians(169) - 0.0100693
-        a02 = radians(65) - 0.0100693
-        a03 = radians(-146) + 0.015708
-        a04 = radians(102.5) - 0.0221239
-        a05 = radians(169) - 0.11062
-        Q0 = [a01, a02, a03, a04, a05]
-        Q1 = [A1, A2, A3, A4, A5]
-        Q3 = []
-        for i in range(5):                          # сделать, чтобы проверка осуществлялась до отправки сообщения
-            Q3.append(Q0[i] + Q1[i])
-        return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
+            print 'Woops!'
 
     def check(self, Q3, x, y, z):
         if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
@@ -358,7 +225,7 @@ class Arm(object):
             else:
                 return False
         else:
-            return True
+            return False
 
 class Gripper(object):
 
@@ -407,47 +274,130 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def test():
-    """Test rospyoubot functionality."""
-    robot = YouBot()
-    timer = rospy.Rate(0.25)
-    timer.sleep()
-    print "Testing base velocities command..."
-    robot.base.set_velocity(0.1, 0.1, -0.1)
-    timer.sleep()
-    robot.base.set_velocity()
-    timer.sleep()
-    print "Testing gripper position command..."
-    robot.arm.gripper.set_gripper_state(False)
-    timer.sleep()
-    robot.arm.gripper.set_gripper_state(True)
-    timer.sleep()
-    print "Testing arm position command..."
-    robot.arm.set_joints_angles(2.95, 1.1, -2.6, 1.8, 2.95)
-    timer.sleep()
-    robot.arm.set_joints_angles(0.0100693,
-                                0.0100693,
-                                -0.015708,
-                                0.0221239,
-                                0.11062)
-    timer.sleep()
-    print "Testing arm velocities commad..."
-    robot.arm.set_joints_velocities(0.1, 0.1, -0.1, 0.1, 0.1)
-    timer.sleep()
-    robot.arm.set_joints_velocities(0, 0, 0, 0, 0)
-    timer.sleep()
-    print "Going home..."
-    robot.arm.set_joints_angles(0.0100693,
-                                0.0100693,
-                                -0.015708,
-                                0.0221239,
-                                0.11062)
+def all_axis_calc(x, y, z, w, ori, elbow, a5=0):
+    def a1_calc(x, y, ori):
+        """ расчет первой степени подвижности """
+        if ori == 0:
+        # 1. ориентация плечо вперед
+            if y == 0:
+                A1 = 0
+            elif x == 0 and y > 0:
+                A1 = -pi / 2
+            elif x == 0 and y < 0:
+                A1 = pi / 2
+            elif x > 0:
+                A1 = -atan(y / x)
+            elif x < 0 and y > 0:
+                A1 = -atan(y / x) - pi
+            elif x < 0 and y < 0:
+                A1 = -atan(y / x) + pi
+        else:
+        # 2. ориентация плечо назад
+            if y == 0:
+                A1 = pi
+            elif x == 0 and y > 0:
+                A1 = pi / 2
+            elif x == 0 and y < 0:
+                A1 = -pi / 2
+            elif x < 0:
+                A1 = -atan(y / x)
+            elif x > 0 and y >= 0:
+                A1 = -atan(y / x) + pi
+            elif x > 0 and y < 0:
+                A1 = -atan(y / x) - pi
+        return A1
 
-def test_goto():
-    r = YouBot()
-    r.base.lin_goto(1, 0, 0)
-    r.base.lin_goto(0, 0, 0)
+    def a2_calc(x, y, z, w, ori, A1, A3):
+        """ расчет второй степени подвижности """
+        X = x - a * cos(A1)
+        Y = y + a * sin(A1)
+        beta = atan((L3 * sin(A3)) / (L2 + L3 * cos(A3)))
+        alpha_v = ((z - (L4 + L5) * cos(radians(w))) - L1)
+        alpha_hp = (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w)))
+        alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w)))
 
+        if ori == 0:
+        # ориентация плечо вперед
+            if  alpha_v >= 0:
+            # если 4-ая степень выше 2-ой
+                if sqrt(x ** 2 + y ** 2) >= 33:
+                    alpha = atan(alpha_hp / alpha_v)
+                else:
+                # если точка между осью А1 и осью А2
+                    alpha = atan(alpha_hm / alpha_v)
+                A2 = alpha - beta
+            else:
+            # если 4-ая степень опускается ниже 2-ой
+                alpha = atan(alpha_v / alpha_hp)
+                A2 = pi / 2 - alpha - beta
+        else:
+        # ориентация плечо назад
+            if alpha_v >= 0:
+                alpha = atan(alpha_hp / alpha_v)
+                A2 = -alpha - beta
+            else:
+                alpha = atan(alpha_v / alpha_hp)
+                A2 = -pi / 2 + alpha - beta
+        return A2
 
-if __name__ == '__main__':
-    test_goto()
+    def a3_calc(x, y, z, w, ori, elbow, A1):
+        """ расчет третьей степени подвижности """
+        X = x - a * cos(A1)
+        Y = y + a * sin(A1)
+        if ori == 0:                                            # сделать тут try
+            if sqrt(x ** 2 + y ** 2) >= 33:
+                Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+            else:
+                Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+            if elbow == 0:
+            # локоть вверх
+                A3 = acos(Cos_A3)
+            else:
+            # локоть вниз
+                A3 = -acos(Cos_A3)
+        else:
+            Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+            if elbow == 0:
+                A3 = -acos(Cos_A3)
+            else:
+                A3 = acos(Cos_A3)
+        return A3
+
+    def a4_calc(w, ori, A2, A3):
+        """ расчет четвертой степени подвижности """
+        if ori == 0:
+            A4l = radians(w) - A2 - A3
+        else:
+            A4l = -radians(w)- A2 - A3
+
+        if A4l > pi:
+        # перевод угла в формат от -pi до pi
+            A4 = A4l - 2 * pi
+        elif A4l < - pi:
+            A4 = A4l + 2 * pi
+        else:
+            A4 = A4l
+        return A4
+
+    L1 = 147.0
+    L2 = 155.0
+    L3 = 135.0
+    L4 = 217.0
+    L5 = 0.5
+    a = 33.0
+    A1 = a1_calc(x, y, ori)
+    A3 = a3_calc(x, y, z, w, ori, elbow, A1)
+    A2 = a2_calc(x, y, z, w, ori, A1, A3)
+    A4 = a4_calc(w, ori, A2, A3)
+    A5 = radians(a5)
+    a01 = radians(169) - 0.0100693
+    a02 = radians(65) - 0.0100693
+    a03 = radians(-146) + 0.015708
+    a04 = radians(102.5) - 0.0221239
+    a05 = radians(169) - 0.11062
+    Q0 = [a01, a02, a03, a04, a05]
+    Q1 = [A1, A2, A3, A4, A5]
+    Q3 = []
+    for i in range(5):                          # сделать, чтобы проверка осуществлялась до отправки сообщения
+        Q3.append(Q0[i] + Q1[i])
+    return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
