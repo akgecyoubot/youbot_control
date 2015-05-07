@@ -224,25 +224,10 @@ class Arm(object):
         возвращает углы поворота осей в радианах
         """
         Q = all_axis_calc(x, y, z, w, ori, elbow)
-        if self.check(Q, x, y, z):
+        if _check(Q, x, y, z):
             self.set_joints_angles(*Q)
         else:
             print 'Woops!'
-
-    def check(self, Q3, x, y, z):
-        u"""Проверяет заданное положение манипулятора."""
-        if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
-            0.0100692 <= Q3[1] <= 2.61799 and
-            -0.0221239 <= Q3[2] <= -0.015708 and
-            0.0221239 <= Q3[3] <= 3.4292 and
-            0.1106200 <= Q3[4] <= 5.64159):
-            if z < 0 and x < 150 and -150 < y < 150:
-            # ограничения размера тележки
-                return True
-            else:
-                return False
-        else:
-            return False
 
 class Gripper(object):
 
@@ -456,3 +441,18 @@ def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     # Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
     # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
     return Xyp, Yyp
+
+def _check(Q3, x, y, z):
+    u"""Проверяет заданное положение манипулятора."""
+    if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
+        0.0100692 <= Q3[1] <= 2.61799 and
+        -0.0221239 <= Q3[2] <= -0.015708 and
+        0.0221239 <= Q3[3] <= 3.4292 and
+        0.1106200 <= Q3[4] <= 5.64159):
+        if z < 0 and x < 150 and -150 < y < 150:
+        # ограничения размера тележки
+            return True
+        else:
+            return False
+    else:
+        return False
