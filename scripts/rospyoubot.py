@@ -223,8 +223,8 @@ class Arm(object):
         Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-        Q = all_axis_calc(x, y, z, w, ori, elbow)
-        if _check(Q, x, y, z):
+        Q = _jointsAnglesForPose(x, y, z, w, ori, elbow)
+        if _checkPose(Q, x, y, z):
             self.set_joints_angles(*Q)
         else:
             print 'Woops!'
@@ -276,7 +276,7 @@ class Gripper(object):
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
 
-def all_axis_calc(x, y, z, w, ori, elbow):
+def _jointsAnglesForPose(x, y, z, w, ori, elbow):
     u"""Просчитывает положения степеней подвижности для заданного положения."""
     def a1_calc(x, y, ori):
         u"""Расчет первой степени подвижности."""
@@ -402,7 +402,7 @@ def all_axis_calc(x, y, z, w, ori, elbow):
     Q0 = [a01, a02, a03, a04, a05]
     Q1 = [A1, A2, A3, A4, A5]
     Q3 = []
-    for i in range(5):                          # сделать, чтобы проверка осуществлялась до отправки сообщения
+    for i in range(5):  # сделать, чтобы проверка осуществлялась до отправки сообщения
         Q3.append(Q0[i] + Q1[i])
     return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
 def _calculateAngularVelocity(current, goal):
@@ -442,7 +442,7 @@ def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
     return Xyp, Yyp
 
-def _check(Q3, x, y, z):
+def _checkPose(Q3, x, y, z):
     u"""Проверяет заданное положение манипулятора."""
     if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
         0.0100692 <= Q3[1] <= 2.61799 and
