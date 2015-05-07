@@ -165,7 +165,7 @@ class Arm(object):
                          JointState,
                          self._update_joints_states)
 
-    def set_joints_angles(self, *args):
+    def set_joints_angles(self, *args):  # TODO: remove *args
         u"""Set arm joints to defined angles in radians.
 
         Arguments:
@@ -187,7 +187,7 @@ class Arm(object):
             self.joints_positions.positions.append(tmp)
         self.joints_positions_publisher.publish(self.joints_positions)
 
-    def set_joints_velocities(self, *args):
+    def set_joints_velocities(self, *args):  # TODO: remove *args
         u"""Set velocity for each joint.
 
         Arguments:
@@ -200,7 +200,7 @@ class Arm(object):
         """
         assert len(args) == 5
         self.joints_velocities.velocities = []
-        for i in range(len(args)):  # I know it's unpythonic, sorry
+        for i in range(len(args)):  # TODO: rewrite using enumerate()
             tmp = JointValue()
             tmp.timeStamp = rospy.Time.now()
             tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
@@ -427,7 +427,7 @@ def _calculateAngularVelocity(current, goal):
         return 1
     else:
         return 0
-def _calculateVelocity(*args):
+def _calculateVelocity(*args):  # TODO: remove *args
     """Return velocity vector."""
     # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
     velocity = ()
