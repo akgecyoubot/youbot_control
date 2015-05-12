@@ -107,7 +107,7 @@ class Base(object):
         position += mark * 2 * acos(self.odometry.pose.pose.orientation.w),
         return position
 
-    def lin(self, Xwp, Ywp, Phip, speed=0.5):
+    def lin(self, Xwp, Ywp, Phip, speed=0.5):  # TODO: Make it work with different speeds
         u"""
         Move youBot base to the point with coordinate (Xwp, Ywp).
 
