@@ -7,7 +7,6 @@ import ttk
 import rospyoubot
 
 
-
 class MainApplication(ttk.Frame):
 
     u"""Основное окно приложения."""
@@ -285,6 +284,7 @@ class AutomaticControls(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.pt_list = tk.StringVar()
+        # Points Listbox
         self.points_list = tk.Listbox(self,
                                       height=26,
                                       selectmode='browse',
@@ -294,21 +294,32 @@ class AutomaticControls(ttk.Frame):
                               sticky='nswe',
                               rowspan=2,
                               columnspan=2)
+        # Buttons frame
         self.buttons_frame = ttk.Frame(self)
         self.buttons_frame.grid(column=2, row=0, sticky='n')
+        # Add button
         self.add_button = ttk.Button(self.buttons_frame,
-                                     text=u'Добавить',
-                                     width=7)
+                                     text=u'Платформа',
+                                     width=9)
         self.add_button.grid(column=0, row=0)
         self.add_button.bind('<Button-1>', self.add_to_list)
+        # Edit button
         ttk.Button(self.buttons_frame,
                    text=u'Редактировать',
-                   width=7).grid(column=0, row=1)
+                   width=9).grid(column=0, row=1)
+        # Remove button
         self.remove_button = ttk.Button(self.buttons_frame,
                                         text=u'Удалить',
-                                        width=7)
+                                        width=9)
         self.remove_button.grid(column=0, row=2)
         self.remove_button.bind('<Button-1>', self.remove_point)
+        # Start button
+        ttk.Button(self.buttons_frame,
+                   text=u'Старт',
+                   width=9,
+                   command=self.start).grid(column=0, row=3)
+        # Stop button
+        ttk.Button(self.buttons_frame, text=u'Стоп', width=9).grid(column=0, row=4)
         ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
         ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
         for child in self.winfo_children():
@@ -316,19 +327,11 @@ class AutomaticControls(ttk.Frame):
         for child in self.buttons_frame.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
-    def add_to_list(self, *args):
+    def add_to_list(self, event):
         u"""Добавляет движение в список движений."""
-        window = MotionAdditionWindow(self)
-        points = self.pt_list.get()
-        points = points[1:-1]
-        points = points.split()
-        for i in range(len(points)):
-            points[i] = points[i].strip(",'")
-        points.append('New_item')
-        points = ' '.join(points)
-        self.pt_list.set(points)
+        window = BaseMotionAddition(self)
 
-    def remove_point(self, *args):
+    def remove_point(self, event):
         u"""Удаляет выбранное движение из списка."""
         if len(self.points_list.curselection()) > 0:
             index = int(self.points_list.curselection()[0])
@@ -341,52 +344,90 @@ class AutomaticControls(ttk.Frame):
             points = ' '.join(points)
             self.pt_list.set(points)
 
-class MotionAdditionWindow(tk.Toplevel):
+    def start(self):
+        for key in POINTS_DICT.keys():
+            R1.base.lin(*POINTS_DICT[key])
+            R1.base.set_velocity(0, 0, 0)
+
+class BaseMotionAddition(tk.Toplevel):
 
     u"""Окно добавления движения."""
 
     def __init__(self, parent):
         u"""Инициализация класса."""
         tk.Toplevel.__init__(self, parent)
-        self.title(u'Выбор движения')
+        self.parent = parent
+        self.title(u'Движение платформы')
         self.resizable(0, 0)
-        self.notebook = ttk.Notebook(self)
-        self.notebook.grid(column=0, row=0, sticky='nswe')
-        self.base_motion = BaseMotionAddition(self)
-        self.notebook.add(self.base_motion, text=u'Платформа')
-
-class BaseMotionAddition(ttk.Frame):
-    def __init__(self, parent):
-        ttk.Frame.__init__(self, parent)
-        self.grid(column=0, row=0)
-        ttk.Label(self,
-                  text=u'Имя:').grid(column=0, row=0, sticky='e')
-        ttk.Entry(self).grid(column=1, row=0, sticky='w')
-        ttk.Label(self,
-                  text=u'Тип движения:').grid(column=2, row=0, sticky='e')
-        ttk.Combobox(self).grid(column=3, row=0)
-        ttk.Label(self,
-                  text=u'P1:',
-                  width=3).grid(column=4, row=0, sticky='e')
-        ttk.Entry(self).grid(column=5, row=0, sticky='w')
-        ttk.Button(self, text='Touch Up').grid(column=5, row=1)
-        ttk.Label(self,
-                  text=u'P2:',
-                  width=3).grid(column=6, row=0, sticky='e')
-        ttk.Entry(self).grid(column=7, row=0, sticky='w')
-        ttk.Button(self, text='Touch Up').grid(column=7, row=1)
-        ttk.Button(self, text=u'Сохранить').grid(row=2, column=0)
-        cancel_button = ttk.Button(self,
+        self.frm = ttk.Frame(self)
+        self.frm.grid(column=0, row=0, sticky='nswe')
+        ttk.Label(self.frm,
+                  text=u'Имя точки:').grid(column=0, row=0, sticky='e')
+        # Point's name
+        self.point_name = tk.StringVar()
+        ttk.Entry(self.frm,
+                  textvariable=self.point_name).grid(column=1,
+                                                     row=0,
+                                                     sticky='w')
+        # X coordinate
+        ttk.Label(self.frm,
+                  text=u'X:',
+                  width=3).grid(column=3, row=0, sticky='e')
+        self.X = ttk.Entry(self.frm)
+        self.X.grid(column=4, row=0, sticky='w')
+        # Y coordinate
+        ttk.Label(self.frm,
+                  text=u'Y:',
+                  width=3).grid(column=3, row=1, sticky='e')
+        self.Y = ttk.Entry(self.frm)
+        self.Y.grid(column=4, row=1, sticky='w')
+        # Orientation
+        ttk.Label(self.frm,
+                  text=u'\u03c6:',
+                  width=3).grid(column=3, row=2, sticky='e')
+        self.Phi = ttk.Entry(self.frm)
+        self.Phi.grid(column=4, row=2, sticky='w')
+        # Touch Up! button
+        ttk.Button(self.frm,
+                   text='Touch Up',
+                   command=self.touch_up).grid(column=4, row=3)
+        # Save button
+        save_button = ttk.Button(self.frm, text=u'Сохранить', command=self.save)
+        save_button.grid(row=3, column=0)
+        # Cancel button
+        cancel_button = ttk.Button(self.frm,
                                    text=u'Отмена',
                                    command=self.cancel)
-        cancel_button.grid(row=2, column=1)
-        for child in self.winfo_children():
+        cancel_button.grid(row=3, column=1)
+        for child in self.frm.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
-    def cancel(self, *args):
+    def cancel(self):
         u"""Закрывает окно, не сохраняя результат."""
         self.destroy()
 
+    def save(self):
+        u"""Сохраняет точку в список точек."""
+        points = self.parent.pt_list.get()[1:-1]
+        points_list = points.split()
+        for i in range(len(points_list)):
+            points_list[i] = points_list[i].strip(",'")
+        name = 'Base:{}'.format(self.point_name.get())
+        x = self.X.get()
+        y = self.Y.get()
+        phi = self.Phi.get()
+        POINTS_DICT[name] = (float(x), float(y), float(phi))
+        points_list.append(name)
+        points = ' '.join(points_list)
+        self.parent.pt_list.set(points)
+        self.destroy()
+
+    def touch_up(self):
+        odometry = R1.base.get_odometry()
+        self.X.insert(0, odometry[0])
+        self.Y.insert(0, odometry[1])
+        self.Phi.insert(0, odometry[2])
+        pass
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
     # Base movement
@@ -454,6 +495,7 @@ if __name__ == '__main__':
     R1 = rospyoubot.YouBot()
     ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
     ODOMETRY = [tk.StringVar() for i in range(3)]
+    POINTS_DICT = {}
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
     ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())
