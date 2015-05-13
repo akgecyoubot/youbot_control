@@ -30,6 +30,7 @@ class MainApplication(ttk.Frame):
                           text='Автоматическое управление',
                           sticky='nswe')
 
+
 class ControlsPage(ttk.Frame):
 
     u"""Вкладка управления."""
@@ -51,6 +52,7 @@ class ControlsPage(ttk.Frame):
         #
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
 
 class OdometryFrame(ttk.LabelFrame):
 
@@ -85,6 +87,7 @@ class OdometryFrame(ttk.LabelFrame):
                   anchor=tk.W).grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
+
 
 class JointsControlsFrame(ttk.LabelFrame):
 
@@ -132,6 +135,7 @@ class JointsControlsFrame(ttk.LabelFrame):
                                  1.769468876296561,
                                  2.838871440356912)
 
+
 class JointControl(ttk.Frame):
 
     u"""Фрейм управления отдельной степенью."""
@@ -172,6 +176,7 @@ class JointControl(ttk.Frame):
         u"""Задаёт скорость оси, при нажатии на кнопку '-'."""
         arm_velocities = [-ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
+
 
 class BaseControl(ttk.LabelFrame):
 
@@ -242,6 +247,7 @@ class BaseControl(ttk.LabelFrame):
         u"""Обрабатыевает нажатие на кнопку RR."""
         R1.base.set_velocity(ang_z=-BASE_VELOCITY)
 
+
 class GripperControl(ttk.Frame):
 
     u"""Фрейм управления гриппером."""
@@ -277,6 +283,7 @@ class GripperControl(ttk.Frame):
         u"""Открывает гриппер и записывает 'Opened' в его статус."""
         self.gripper_state.set('Открыт')
         R1.arm.gripper.set_gripper_state(True)
+
 
 class AutomaticControls(ttk.Frame):
 
@@ -349,10 +356,12 @@ class AutomaticControls(ttk.Frame):
             self.pt_list.set(points)
 
     def start(self):
+        u"""Запускает выполнение программы движения робота."""
         for key in sorted(POINTS_DICT.keys()):
             print "Goint to point {}, with coordinates {}".format(key, POINTS_DICT[key])
             R1.base.lin(*POINTS_DICT[key])
             R1.base.set_velocity(0, 0, 0)
+
 
 class BaseMotionAddition(tk.Toplevel):
 
@@ -428,11 +437,13 @@ class BaseMotionAddition(tk.Toplevel):
         self.destroy()
 
     def touch_up(self):
+        u"""Записывает текущие координаты базы в поля ввода координат."""
         odometry = R1.base.get_odometry()
         self.X.insert(0, odometry[0])
         self.Y.insert(0, odometry[1])
         self.Phi.insert(0, odometry[2])
-        pass
+
+
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
     # Base movement
@@ -474,10 +485,12 @@ def key_pressed(event):
     if event.char == 'g':
         R1.arm.gripper.set_gripper_state(False)
 
+
 def key_released(event):
     u"""Обрабатывает отпускание кнопки клавиатуры."""
     R1.base.set_velocity()
     R1.arm.set_joints_velocities(0, 0, 0, 0, 0)
+
 
 def update_joints_labels():
     u"""бновляет данные о текущем угле поворота осей и одометрии базы."""
