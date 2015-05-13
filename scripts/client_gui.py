@@ -41,16 +41,13 @@ class ControlsPage(ttk.Frame):
         self.columnconfigure(1, weight=1)
         #
         self.joints_controls = JointsControlsFrame(self)
-        self.joints_controls.grid(column=1, row=0, rowspan=2, sticky='nswe')
-        #
-        self.joints_controls = CurrentPositionFrame(self)
-        self.joints_controls.grid(column=1, row=2, sticky='nswe')
+        self.joints_controls.grid(column=1, row=0, sticky='nswe')
         #
         self.odometry = OdometryFrame(self)
-        self.odometry.grid(column=0, row=1, rowspan=1, sticky='nswe')
+        self.odometry.grid(column=1, row=1, sticky='nswe')
         #
         self.base_control = BaseControl(self)
-        self.base_control.grid(column=0, row=0, sticky='nswe')
+        self.base_control.grid(column=1, row=2, sticky='nswe')
         #
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
@@ -148,7 +145,7 @@ class JointControl(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.joint = joint
         self.label = 'A{}:'.format(joint)
-        self.angle = tk.StringVar()     # Эта строчка видимо лишняя
+        self.angle = tk.StringVar()
         ttk.Label(self, text=self.label, width=6, anchor='e').grid(column=0,
                                                                    row=0,
                                                                    sticky=tk.E)
@@ -175,24 +172,6 @@ class JointControl(ttk.Frame):
         u"""Задаёт скорость оси, при нажатии на кнопку '-'."""
         arm_velocities = [-ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
-
-class CurrentPositionFrame(ttk.LabelFrame):
-    def __init__(self, parent):
-        ttk.LabelFrame.__init__(self, parent, text='Координаты схвата в СК базы:')
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.AXIS_POSITION = (tk.StringVar)
-
-        ttk.Label(self, text='X:', width=6, anchor='e').grid(column=0, row=0)
-        ttk.Label(self, text='Y:', width=6, anchor='e').grid(column=0, row=1)
-        ttk.Label(self, text='Z:', width=6, anchor='e').grid(column=0, row=2)
-
-        self.x_value = ttk.Label(self, textvariable=self.AXIS_POSITION[0], width=10, anchor='center')
-        self.x_value.grid(column=1, row=0)
-        self.y_value = ttk.Label(self, textvariable=self.AXIS_POSITION[1], width=10, anchor='center')
-        self.y_value.grid(column=1, row=1)
-        self.z_value = ttk.Label(self, textvariable=self.AXIS_POSITION[2], width=10, anchor='center')
-        self.z_value.grid(column=1, row=2)
 
 class BaseControl(ttk.LabelFrame):
 
@@ -508,8 +487,6 @@ def update_joints_labels():
         ODOMETRY[i].set(round(odom[i], 3))
     for i in range(5):
         ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
-    for i in range(3):
-        AXIS_POSITION[i].set(round(current_joints_positions[i], 3))
     ROOT.after(100, update_joints_labels)
 
 
@@ -521,10 +498,9 @@ if __name__ == '__main__':
     BASE_VELOCITY = 1
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
-    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]  # с чем связана цифра
+    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
     ODOMETRY = [tk.StringVar() for i in range(3)]
     POINTS_DICT = {}
-    AXIS_POSITION = [tk.StringVar() for i in range(3)]
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
     ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())
