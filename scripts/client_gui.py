@@ -345,7 +345,8 @@ class AutomaticControls(ttk.Frame):
             self.pt_list.set(points)
 
     def start(self):
-        for key in POINTS_DICT.keys():
+        for key in sorted(POINTS_DICT.keys()):
+            print "Goint to point {}, with coordinates {}".format(key, POINTS_DICT[key])
             R1.base.lin(*POINTS_DICT[key])
             R1.base.set_velocity(0, 0, 0)
 
