@@ -39,12 +39,19 @@ class ControlsPage(ttk.Frame):
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
+        #
         self.joints_controls = JointsControlsFrame(self)
-        self.joints_controls.grid(column=1, row=0, sticky='nswe')
+        self.joints_controls.grid(column=1, row=0, rowspan=2, sticky='nswe')
+        #
+        self.joints_controls = CurrentPositionFrame(self)
+        self.joints_controls.grid(column=1, row=2, sticky='nswe')
+        #
         self.odometry = OdometryFrame(self)
-        self.odometry.grid(column=1, row=1, rowspan=1, sticky='nswe')
+        self.odometry.grid(column=0, row=1, rowspan=1, sticky='nswe')
+        #
         self.base_control = BaseControl(self)
-        self.base_control.grid(column=1, row=2, sticky='nswe')
+        self.base_control.grid(column=0, row=0, sticky='nswe')
+        #
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
@@ -141,7 +148,7 @@ class JointControl(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.joint = joint
         self.label = 'A{}:'.format(joint)
-        self.angle = tk.StringVar()
+        self.angle = tk.StringVar()     # Эта строчка видимо лишняя
         ttk.Label(self, text=self.label, width=6, anchor='e').grid(column=0,
                                                                    row=0,
                                                                    sticky=tk.E)
@@ -168,6 +175,24 @@ class JointControl(ttk.Frame):
         u"""Задаёт скорость оси, при нажатии на кнопку '-'."""
         arm_velocities = [-ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
+
+class CurrentPositionFrame(ttk.LabelFrame):
+    def __init__(self, parent):
+        ttk.LabelFrame.__init__(self, parent, text='Координаты схвата в СК базы:')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.AXIS_POSITION = (tk.StringVar)
+
+        ttk.Label(self, text='X:', width=6, anchor='e').grid(column=0, row=0)
+        ttk.Label(self, text='Y:', width=6, anchor='e').grid(column=0, row=1)
+        ttk.Label(self, text='Z:', width=6, anchor='e').grid(column=0, row=2)
+
+        self.x_value = ttk.Label(self, textvariable=self.AXIS_POSITION[0], width=10, anchor='center')
+        self.x_value.grid(column=1, row=0)
+        self.y_value = ttk.Label(self, textvariable=self.AXIS_POSITION[1], width=10, anchor='center')
+        self.y_value.grid(column=1, row=1)
+        self.z_value = ttk.Label(self, textvariable=self.AXIS_POSITION[2], width=10, anchor='center')
+        self.z_value.grid(column=1, row=2)
 
 class BaseControl(ttk.LabelFrame):
 
@@ -445,29 +470,29 @@ def key_pressed(event):
     elif event.char == 'o':
         R1.base.set_velocity(ang_z=-1)
     # Arm movement
-    if event.char == '1':
+    if event.char == 'q':
         R1.arm.set_joints_velocities(1, 0, 0, 0, 0)
-    elif event.char == 'q':
+    elif event.char == 'Q':
         R1.arm.set_joints_velocities(-1, 0, 0, 0, 0)
-    if event.char == '2':
+    if event.char == 'w':
         R1.arm.set_joints_velocities(0, 1, 0, 0, 0)
-    elif event.char == 'w':
+    elif event.char == 'W':
         R1.arm.set_joints_velocities(0, -1, 0, 0, 0)
-    if event.char == '3':
+    if event.char == 'e':
         R1.arm.set_joints_velocities(0, 0, 1, 0, 0)
-    elif event.char == 'e':
+    elif event.char == 'E':
         R1.arm.set_joints_velocities(0, 0, -1, 0, 0)
-    if event.char == '4':
+    if event.char == 'r':
         R1.arm.set_joints_velocities(0, 0, 0, 1, 0)
-    elif event.char == 'r':
+    elif event.char == 'R':
         R1.arm.set_joints_velocities(0, 0, 0, -1, 0)
-    if event.char == '5':
+    if event.char == 't':
         R1.arm.set_joints_velocities(0, 0, 0, 0, 1)
-    elif event.char == 't':
+    elif event.char == 'T':
         R1.arm.set_joints_velocities(0, 0, 0, 0, -1)
-    if event.char == 'a':
+    if event.char == 'G':
         R1.arm.gripper.set_gripper_state(True)
-    if event.char == 's':
+    if event.char == 'g':
         R1.arm.gripper.set_gripper_state(False)
 
 def key_released(event):
@@ -476,13 +501,15 @@ def key_released(event):
     R1.arm.set_joints_velocities(0, 0, 0, 0, 0)
 
 def update_joints_labels():
-    u"""Обновляет данные о текущем угле поворота осей и одометрии базы."""
+    u"""бновляет данные о текущем угле поворота осей и одометрии базы."""
     current_joints_positions = list(R1.arm.get_current_joints_positions())
     odom = R1.base.get_odometry()
     for i in range(3):
         ODOMETRY[i].set(round(odom[i], 3))
     for i in range(5):
         ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
+    for i in range(3):
+        AXIS_POSITION[i].set(round(current_joints_positions[i], 3))
     ROOT.after(100, update_joints_labels)
 
 
@@ -494,9 +521,10 @@ if __name__ == '__main__':
     BASE_VELOCITY = 1
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
-    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
+    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]  # с чем связана цифра
     ODOMETRY = [tk.StringVar() for i in range(3)]
     POINTS_DICT = {}
+    AXIS_POSITION = [tk.StringVar() for i in range(3)]
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
     ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())

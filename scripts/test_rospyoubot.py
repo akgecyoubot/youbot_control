@@ -1,7 +1,6 @@
 #!/usr/bin/python2
 # coding=UTF-8
 """This module is for testing rospyoubot module."""
-PKG = 'pybotserver'
 
 import rospyoubot
 from math import radians, sqrt
@@ -72,3 +71,9 @@ class BaseTestCase(unittest.TestCase):
             self.assertEqual(func(*test),
                              cases[test],
                              "Function({}) is not equal to {}".format(test, cases[test]))
+class ArmTestCase(unittest.TestCase):
+    def test_jointsAnglesForPose(self):
+        pass
+
+    def test_checkPose(self):
+        pass
