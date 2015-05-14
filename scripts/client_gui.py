@@ -4,6 +4,7 @@
 
 import Tkinter as tk
 import ttk
+import tkMessageBox
 import rospyoubot
 
 
@@ -347,15 +348,15 @@ class AutomaticControls(ttk.Frame):
         if len(self.points_list.curselection()) > 0:
             index = int(self.points_list.curselection()[0])
             points = listbox_to_list(self.pt_list.get())
-            points.pop(index)
+            POINTS_DICT.pop(points.pop(index))
             listbox_string = ' '.join(points)
             self.pt_list.set(listbox_string)
 
     def start(self):
         u"""Запускает выполнение программы движения робота."""
-        for key in sorted(POINTS_DICT.keys()):
-            print "Goint to point {}, with coordinates {}".format(key, POINTS_DICT[key])
-            R1.base.lin(*POINTS_DICT[key])
+        for name in listbox_to_list(self.pt_list.get()):
+            print "Goint to point {}, with coordinates {}".format(name, POINTS_DICT[name])
+            R1.base.lin(*POINTS_DICT[name])
             R1.base.set_velocity(0, 0, 0)
 
 
@@ -418,16 +419,44 @@ class BaseMotionAddition(tk.Toplevel):
 
     def save(self):
         u"""Сохраняет точку в список точек."""
+        error_message = ""
         points_list = listbox_to_list(self.parent.pt_list.get())
+        # Point name check
         name = 'Base:{}'.format(self.point_name.get())
-        x = self.X.get()
-        y = self.Y.get()
-        phi = self.Phi.get()
-        POINTS_DICT[name] = (float(x), float(y), float(phi))
-        points_list.append(name)
-        listbox_string = ' '.join(points_list)
-        self.parent.pt_list.set(listbox_string)
-        self.destroy()
+        if name not in POINTS_DICT.keys():
+            point_name_error = False
+        else:
+            point_name_error = True
+            error_message += "Точка с таким именем уже существует"
+        # X coordinate check
+        if isfloat(self.X.get()):
+            x = self.X.get()
+            x_error = False
+        else:
+            x_error = True
+            error_message += u"Координата X не является числом\n"
+        if isfloat(self.Y.get()):
+            y = self.Y.get()
+            y_error = False
+        else:
+            y_error = True
+            error_message += u"Координата Y не является числом\n"
+        # Phi check
+        if isfloat(self.Phi.get()):
+            phi = self.Phi.get()
+            phi_error = False
+        else:
+            phi_error = True
+            error_message += u"Координата \u03c6 не является числом\n"
+        if not (point_name_error or x_error or y_error or phi_error):
+            POINTS_DICT[name] = (float(x), float(y), float(phi))
+            points_list.append(name)
+            listbox_string = ' '.join(points_list)
+            self.parent.pt_list.set(listbox_string)
+            self.destroy()
+        else:
+            tkMessageBox.showerror(u"Ошибка добавления точки",
+                                   error_message)
 
     def touch_up(self):
         u"""Записывает текущие координаты базы в поля ввода координат."""
@@ -502,6 +531,16 @@ def listbox_to_list(listbox_str):
     list_from_string = string.split()
     striped_list = [item.strip(",'") for item in list_from_string]
     return striped_list
+
+
+def isfloat(string):
+    u"""Return True if string can be converted into float."""
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+
 
 if __name__ == '__main__':
     ROOT = tk.Tk()
