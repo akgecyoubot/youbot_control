@@ -41,16 +41,16 @@ class ControlsPage(ttk.Frame):
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
-        #
+        # Arm joints controls
         self.joints_controls = JointsControlsFrame(self)
         self.joints_controls.grid(column=1, row=0, sticky='nswe')
-        #
+        # Odometry
         self.odometry = OdometryFrame(self)
         self.odometry.grid(column=1, row=1, sticky='nswe')
-        #
+        # Base controls
         self.base_control = BaseControl(self)
         self.base_control.grid(column=1, row=2, sticky='nswe')
-        #
+        # Padding
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
@@ -170,12 +170,14 @@ class JointControl(ttk.Frame):
 
     def plus_button_press(self, *args):
         u"""Задаёт скорость оси, при нажатии на кнопку '+'."""
-        arm_velocities = [ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
+        vel = ARM_VELOCITY
+        arm_velocities = [vel if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
 
     def minus_button_press(self, *args):
         u"""Задаёт скорость оси, при нажатии на кнопку '-'."""
-        arm_velocities = [-ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
+        vel = -1 * ARM_VELOCITY
+        arm_velocities = [vel if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
 
 
@@ -192,32 +194,50 @@ class BaseControl(ttk.LabelFrame):
         controls_style = ttk.Style()
         controls_style.configure('base.TButton', font=('TkDefaultFont', 20))
         # Rotate left
-        self.rl_button = ttk.Button(self, text=u'\u21b6', width=2, style='base.TButton')
+        self.rl_button = ttk.Button(self,
+                                    text=u'\u21b6',
+                                    width=2,
+                                    style='base.TButton')
         self.rl_button.grid(column=0, row=0, sticky=tk.SE)
         self.rl_button.bind('<Button-1>', self.rl_button_press)
         self.rl_button.bind('<ButtonRelease-1>', key_released)
         # Forward
-        self.f_button = ttk.Button(self, text=u'\u2191', width=2, style='base.TButton')
+        self.f_button = ttk.Button(self,
+                                   text=u'\u2191',
+                                   width=2,
+                                   style='base.TButton')
         self.f_button.grid(column=1, row=0, sticky=tk.S)
         self.f_button.bind('<Button-1>', self.f_button_press)
         self.f_button.bind('<ButtonRelease-1>', key_released)
         # Rotate right
-        self.rr_button = ttk.Button(self, text=u'\u21b7', width=2, style='base.TButton')
+        self.rr_button = ttk.Button(self,
+                                    text=u'\u21b7',
+                                    width=2,
+                                    style='base.TButton')
         self.rr_button.grid(column=2, row=0, sticky=tk.SW)
         self.rr_button.bind('<Button-1>', self.rr_button_press)
         self.rr_button.bind('<ButtonRelease-1>', key_released)
         # Left
-        self.l_button = ttk.Button(self, text=u'\u2190', width=2, style='base.TButton')
+        self.l_button = ttk.Button(self,
+                                   text=u'\u2190',
+                                   width=2,
+                                   style='base.TButton')
         self.l_button.grid(column=0, row=1, sticky=tk.NE)
         self.l_button.bind('<Button-1>', self.l_button_press)
         self.l_button.bind('<ButtonRelease-1>', key_released)
         # Backwards
-        self.b_button = ttk.Button(self, text=u'\u2193', width=2, style='base.TButton')
+        self.b_button = ttk.Button(self,
+                                   text=u'\u2193',
+                                   width=2,
+                                   style='base.TButton')
         self.b_button.grid(column=1, row=1, sticky=tk.N)
         self.b_button.bind('<Button-1>', self.b_button_press)
         self.b_button.bind('<ButtonRelease-1>', key_released)
         # Right
-        self.r_button = ttk.Button(self, text=u'\u2192', width=2, style='base.TButton')
+        self.r_button = ttk.Button(self,
+                                   text=u'\u2192',
+                                   width=2,
+                                   style='base.TButton')
         self.r_button.grid(column=2, row=1, sticky=tk.NW)
         self.r_button.bind('<Button-1>', self.r_button_press)
         self.r_button.bind('<ButtonRelease-1>', key_released)
@@ -298,7 +318,7 @@ class AutomaticControls(ttk.Frame):
         self.pt_list = tk.StringVar()
         # Points Listbox
         self.points_list = tk.Listbox(self,
-                                      height=26,
+                                      height=29,
                                       selectmode='browse',
                                       listvariable=self.pt_list)
         self.points_list.grid(column=0,
@@ -331,8 +351,12 @@ class AutomaticControls(ttk.Frame):
                    width=9,
                    command=self.start).grid(column=0, row=3)
         # Stop button
-        ttk.Button(self.buttons_frame, text=u'Стоп', width=9).grid(column=0, row=4)
+        ttk.Button(self.buttons_frame,
+                   text=u'Стоп',
+                   width=9).grid(column=0, row=4)
+        # Up button
         ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
+        # Down button
         ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
@@ -355,7 +379,9 @@ class AutomaticControls(ttk.Frame):
     def start(self):
         u"""Запускает выполнение программы движения робота."""
         for name in listbox_to_list(self.pt_list.get()):
-            print "Goint to point {}, with coordinates {}".format(name, POINTS_DICT[name])
+            message = "Goint to point {}, with coordinates {}"
+            message = message.format(name, POINTS_DICT[name])
+            print message
             R1.base.lin(*POINTS_DICT[name])
             R1.base.set_velocity(0, 0, 0)
 
@@ -518,10 +544,10 @@ def update_joints_labels():
     u"""бновляет данные о текущем угле поворота осей и одометрии базы."""
     current_joints_positions = list(R1.arm.get_current_joints_positions())
     odom = R1.base.get_odometry()
-    for i in range(3):
-        ODOMETRY[i].set(round(odom[i], 3))
-    for i in range(5):
-        ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
+    for index, value in enumerate(odom):
+        ODOMETRY[index].set(round(value, 3))
+    for index, value in enumerate(current_joints_positions):
+        ARM_JOINTS_ANGLES[index].set(round(value, 3))
     ROOT.after(100, update_joints_labels)
 
 
@@ -550,8 +576,8 @@ if __name__ == '__main__':
     BASE_VELOCITY = 1
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
-    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]
-    ODOMETRY = [tk.StringVar() for i in range(3)]
+    ARM_JOINTS_ANGLES = [tk.StringVar()] * 5
+    ODOMETRY = [tk.StringVar()] * 3
     POINTS_DICT = {}
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()

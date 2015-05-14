@@ -156,7 +156,7 @@ class Arm(object):
         self.gripper = Gripper()
         self.joints_positions = JointPositions()
         self.current_joints_states = JointState()
-        self.current_joints_states.position = [0.0 for i in range(5)]
+        self.current_joints_states.position = [0.0 for _ in range(5)]
         self.joints_velocities = JointVelocities()
         self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
                                                           JointPositions)
@@ -201,12 +201,12 @@ class Arm(object):
         """
         assert len(args) == 5
         self.joints_velocities.velocities = []
-        for i in range(len(args)):  # TODO: rewrite using enumerate()
+        for index, value in enumerate(args):
             tmp = JointValue()
             tmp.timeStamp = rospy.Time.now()
-            tmp.joint_uri = 'arm_joint_{}'.format(i + 1)
+            tmp.joint_uri = 'arm_joint_{}'.format(index + 1)
             tmp.unit = 's^-1 rad'
-            tmp.value = args[i]
+            tmp.value = value
             self.joints_velocities.velocities.append(tmp)
         self.joints_velocities_publisher.publish(self.joints_velocities)
 
@@ -216,7 +216,7 @@ class Arm(object):
 
     def get_current_joints_positions(self):
         """Return list of current joints angles."""
-        return self.current_joints_states.position
+        return self.current_joints_states.position[:5]
 
     def ptp(self, x, y, z, w, ori, elbow):
         u"""Передвигает манипулятор в заданную точку пространства.
