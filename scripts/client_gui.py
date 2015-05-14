@@ -340,20 +340,16 @@ class AutomaticControls(ttk.Frame):
 
     def add_to_list(self, event):
         u"""Добавляет движение в список движений."""
-        window = BaseMotionAddition(self)
+        BaseMotionAddition(self)
 
     def remove_point(self, event):
         u"""Удаляет выбранное движение из списка."""
         if len(self.points_list.curselection()) > 0:
             index = int(self.points_list.curselection()[0])
-            points = self.pt_list.get()
-            points = points[1:-1]
-            points = points.split()
-            for i in range(len(points)):
-                points[i] = points[i].strip(",'")
+            points = listbox_to_list(self.pt_list.get())
             points.pop(index)
-            points = ' '.join(points)
-            self.pt_list.set(points)
+            listbox_string = ' '.join(points)
+            self.pt_list.set(listbox_string)
 
     def start(self):
         u"""Запускает выполнение программы движения робота."""
@@ -422,18 +418,15 @@ class BaseMotionAddition(tk.Toplevel):
 
     def save(self):
         u"""Сохраняет точку в список точек."""
-        points = self.parent.pt_list.get()[1:-1]
-        points_list = points.split()
-        for i in range(len(points_list)):
-            points_list[i] = points_list[i].strip(",'")
+        points_list = listbox_to_list(self.parent.pt_list.get())
         name = 'Base:{}'.format(self.point_name.get())
         x = self.X.get()
         y = self.Y.get()
         phi = self.Phi.get()
         POINTS_DICT[name] = (float(x), float(y), float(phi))
         points_list.append(name)
-        points = ' '.join(points_list)
-        self.parent.pt_list.set(points)
+        listbox_string = ' '.join(points_list)
+        self.parent.pt_list.set(listbox_string)
         self.destroy()
 
     def touch_up(self):
@@ -502,6 +495,13 @@ def update_joints_labels():
         ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
     ROOT.after(100, update_joints_labels)
 
+
+def listbox_to_list(listbox_str):
+    u"""Convert listbox string into list."""
+    string = listbox_str[1:-1]
+    list_from_string = string.split()
+    striped_list = [item.strip(",'") for item in list_from_string]
+    return striped_list
 
 if __name__ == '__main__':
     ROOT = tk.Tk()
