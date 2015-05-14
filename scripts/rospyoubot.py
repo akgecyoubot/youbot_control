@@ -41,11 +41,11 @@ class YouBot(object):
         """Stop youBot, and move arm to default position."""
         self.base.set_velocity(0, 0, 0)
         self.arm.set_joints_velocities(0, 0, 0, 0, 0)
-        # self.arm.set_joints_angles(0.0100693,
-                                   # 0.0100693,
-                                   # -0.015708,
-                                   # 0.0221239,
-                                   # 0.11062)
+        self.arm.set_joints_angles(0.0100693,
+                                   0.0100693,
+                                   -0.015708,
+                                   0.0221239,
+                                   0.11062)
 
 
 class Base(object):
@@ -60,7 +60,7 @@ class Base(object):
         self.velocity = Twist()
         self.odometry = Odometry()
         self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist)
-        self.rate = rospy.Rate(10)
+        # self.rate = rospy.Rate(10)
         rospy.Subscriber('/odom', Odometry, self._update_odometry)
 
     def set_velocity(self, lin_x=0, lin_y=0, ang_z=0):
@@ -108,7 +108,8 @@ class Base(object):
         position += mark * 2 * acos(self.odometry.pose.pose.orientation.w),
         return position
 
-    def lin(self, Xwp, Ywp, Phip, speed=0.5):  # TODO: Make it work with different speeds
+    # TODO: Make it work with different speeds
+    def lin(self, Xwp, Ywp, Phip, speed=0.5):
         u"""Move youBot base to the point with coordinate (Xwp, Ywp).
 
         Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
@@ -119,9 +120,9 @@ class Base(object):
         while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
             Xwr, Ywr, Phir = self.get_odometry()
             print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
-            Xyp, Yyp = _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir)
+            Xyp, Yyp = _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
             print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
-            Vx, Vy = _calculateVelocity(Xyp, Yyp)
+            Vx, Vy = _calculate_velocity(Xyp, Yyp)
             Vx *= speed
             Vy *= speed
             print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
@@ -135,7 +136,7 @@ class Base(object):
             print "Goal orientation: {}".format(Phip)
             # вычислаяем скорость
             print 'Current orientation: ', Phir
-            ang_z = _calculateAngularVelocity(Phir, Phip)
+            ang_z = _calculate_angular_velocity(Phir, Phip)
             print "Velocity: {}".format(ang_z)
             print '____________________________________________________________'
             # Отправляем сообщение с вычесленной скоростью
@@ -158,9 +159,11 @@ class Arm(object):
         self.current_joints_states = JointState()
         self.current_joints_states.position = [0.0 for _ in range(5)]
         self.joints_velocities = JointVelocities()
-        self.joints_positions_publisher = rospy.Publisher('/arm_1/arm_controller/position_command',
+        position_topic = '/arm_1/arm_controller/position_command'
+        self.joints_positions_publisher = rospy.Publisher(position_topic,
                                                           JointPositions)
-        self.joints_velocities_publisher = rospy.Publisher('/arm_1/arm_controller/velocity_command',
+        velocity_topic = '/arm_1/arm_controller/velocity_command'
+        self.joints_velocities_publisher = rospy.Publisher(velocity_topic,
                                                            JointVelocities)
         rospy.Subscriber('/joint_states',
                          JointState,
@@ -224,8 +227,8 @@ class Arm(object):
         Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-        Q = _jointsAnglesForPose(x, y, z, w, ori, elbow)
-        if _checkPose(Q, x, y, z):
+        Q = _joints_angles_for_pose(x, y, z, w, ori, elbow)
+        if _check_pose(Q, x, y, z):
             self.set_joints_angles(*Q)
         else:
             print 'Woops!'
@@ -279,7 +282,7 @@ class Gripper(object):
         self.gripper_position_publisher.publish(self.gripper_position)
 
 
-def _jointsAnglesForPose(x, y, z, w, ori, elbow):
+def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     u"""Просчитывает положения степеней подвижности для заданного положения."""
     def a1_calc(x, y, ori):
         u"""Расчет первой степени подвижности."""
@@ -410,7 +413,8 @@ def _jointsAnglesForPose(x, y, z, w, ori, elbow):
     return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
 
 
-def _calculateAngularVelocity(current, goal):
+def _calculate_angular_velocity(current, goal):
+    u"""Calculate angular velocity to change current orientation to goal."""
     if current > goal:
         return -1
     elif current < goal:
@@ -419,45 +423,35 @@ def _calculateAngularVelocity(current, goal):
         return 0
 
 
-def _calculateVelocity(*args):  # TODO: remove *args
+def _calculate_velocity(*args):  # TODO: remove *args
     """Return velocity vector."""
     # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
     velocity = ()
     try:
-        multiplier = 1 / sqrt(pow(args[0], 2) + pow(args[1],2))
+        multiplier = 1 / sqrt(pow(args[0], 2) + pow(args[1], 2))
     except ZeroDivisionError:
         multiplier = 0
     velocity += (args[0] * multiplier),
     velocity += (args[1] * multiplier),
-    '''
-    for v in args:
-        if abs(v) > 1:
-            velocity.append(v/abs(v))
-        elif 0 < abs(v) <= 1:
-            velocity.append(round(v, 2))
-        else:
-            velocity.append(0)
-    '''
     return velocity
 
 
-def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
-    Xwp -= Xwr
-    Ywp -= Ywr
-    Xyp = Xwp * cos(Phir) + Ywp * sin(Phir)
-    Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir)
-    # Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
-    # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
-    return Xyp, Yyp
+def _transform_coordinates(xwp, ywp, xwr, ywr, phir):
+    u"""Transform point in world coordinates system into robot's system."""
+    xwp -= xwr
+    ywp -= ywr
+    xyp = xwp * cos(phir) + ywp * sin(phir)
+    yyp = -1 * xwp * sin(phir) + ywp * cos(phir)
+    return xyp, yyp
 
 
-def _checkPose(Q3, x, y, z):
+def _check_pose(q, x, y, z):
     u"""Проверяет заданное положение манипулятора."""
-    if (0.0100692 <= Q3[0] <= 5.84014 and   # сделать это с промощью перехвата исключений
-        0.0100692 <= Q3[1] <= 2.61799 and
-        -5.0221239 <= Q3[2] <= -0.015708 and
-        0.0221239 <= Q3[3] <= 3.4292 and
-        0.1106200 <= Q3[4] <= 5.64159):
+    if (0.0100692 <= q[0] <= 5.84014 and
+        0.0100692 <= q[1] <= 2.61799 and
+        -5.0221239 <= q[2] <= -0.015708 and
+        0.0221239 <= q[3] <= 3.4292 and
+        0.1106200 <= q[4] <= 5.64159):
         if not(z < 0 and x < 150 and -150 < y < 150):
         # ограничения размера тележки
             return True
