@@ -47,6 +47,7 @@ class YouBot(object):
                                    # 0.0221239,
                                    # 0.11062)
 
+
 class Base(object):
 
     """Control youBot Base."""
@@ -108,8 +109,7 @@ class Base(object):
         return position
 
     def lin(self, Xwp, Ywp, Phip, speed=0.5):  # TODO: Make it work with different speeds
-        u"""
-        Move youBot base to the point with coordinate (Xwp, Ywp).
+        u"""Move youBot base to the point with coordinate (Xwp, Ywp).
 
         Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
         Phip - Angle between Odometry X axis and robot X axis (Radians)
@@ -142,6 +142,7 @@ class Base(object):
             self.set_velocity(0, 0, ang_z)
             # self.rate.sleep()
         self.set_velocity(0, 0, 0)
+
 
 class Arm(object):
 
@@ -229,6 +230,7 @@ class Arm(object):
         else:
             print 'Woops!'
 
+
 class Gripper(object):
 
     """Gripper class."""
@@ -275,6 +277,7 @@ class Gripper(object):
             tmp_gripper_position_l.timeStamp = rospy.Time.now()
             self.gripper_position.positions.append(tmp_gripper_position_l)
         self.gripper_position_publisher.publish(self.gripper_position)
+
 
 def _jointsAnglesForPose(x, y, z, w, ori, elbow):
     u"""Просчитывает положения степеней подвижности для заданного положения."""
@@ -405,6 +408,8 @@ def _jointsAnglesForPose(x, y, z, w, ori, elbow):
     for i in range(5):  # сделать, чтобы проверка осуществлялась до отправки сообщения
         Q3.append(Q0[i] + Q1[i])
     return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
+
+
 def _calculateAngularVelocity(current, goal):
     if current > goal:
         return -1
@@ -412,6 +417,8 @@ def _calculateAngularVelocity(current, goal):
         return 1
     else:
         return 0
+
+
 def _calculateVelocity(*args):  # TODO: remove *args
     """Return velocity vector."""
     # TODO: Исправить вычисление скорости, чтобы робот не ездил по диагонали
@@ -433,6 +440,7 @@ def _calculateVelocity(*args):  # TODO: remove *args
     '''
     return velocity
 
+
 def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     Xwp -= Xwr
     Ywp -= Ywr
@@ -441,6 +449,7 @@ def _transformCoordinates(Xwp, Ywp, Xwr, Ywr, Phir):
     # Xyp = Xwp * cos(Phir) + Ywp * sin(Phir) - Xwr
     # Yyp = -1 * Xwp * sin(Phir) + Ywp * cos(Phir) - Ywr
     return Xyp, Yyp
+
 
 def _checkPose(Q3, x, y, z):
     u"""Проверяет заданное положение манипулятора."""
