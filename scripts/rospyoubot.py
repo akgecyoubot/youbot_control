@@ -292,48 +292,48 @@ class Gripper(object):
         self.gripper_position_publisher.publish(self.gripper_position)
 
 
-def _joints_angles_for_pose(x, y, z, w, ori, elbow):  # Исправить все предупреждения
+def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     u"""Просчитывает положения степеней подвижности для заданного положения."""
-    def a1_calc(x, y, ori):
+    def calculate_joint1_value(x, y, ori):
         u"""Расчет первой степени подвижности."""
         if ori == 0:
             # 1. ориентация плечо вперед
             if y == 0:
-                A1 = 0
+                joint1_value = 0
             elif x == 0 and y > 0:
-                A1 = -pi / 2
+                joint1_value = -pi / 2
             elif x == 0 and y < 0:
-                A1 = pi / 2
+                joint1_value = pi / 2
             elif x > 0:
-                A1 = -atan(y / x)
+                joint1_value = -atan(y / x)
             elif x < 0 and y > 0:
-                A1 = -atan(y / x) - pi
+                joint1_value = -atan(y / x) - pi
             elif x < 0 and y < 0:
-                A1 = -atan(y / x) + pi
+                joint1_value = -atan(y / x) + pi
         else:
             # 2. ориентация плечо назад
             if y == 0:
-                A1 = pi
+                joint1_value = pi
             elif x == 0 and y > 0:
-                A1 = pi / 2
+                joint1_value = pi / 2
             elif x == 0 and y < 0:
-                A1 = -pi / 2
+                joint1_value = -pi / 2
             elif x < 0:
-                A1 = -atan(y / x)
+                joint1_value = -atan(y / x)
             elif x > 0 and y >= 0:
-                A1 = -atan(y / x) + pi
+                joint1_value = -atan(y / x) + pi
             elif x > 0 and y < 0:
-                A1 = -atan(y / x) - pi
-        return A1
+                joint1_value = -atan(y / x) - pi
+        return joint1_value
 
-    def a2_calc(x, y, z, w, ori, A1, A3):
+    def calculate_joint2_value(x, y, z, w, ori, joint1_value, joint3_value):
         u"""Расчет второй степени подвижности."""
-        X = x - a * cos(A1)
-        Y = y + a * sin(A1)
-        beta = atan((L3 * sin(A3)) / (L2 + L3 * cos(A3)))
-        alpha_v = ((z - (L4 + L5) * cos(radians(w))) - L1)
-        alpha_hp = (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w)))
-        alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w)))
+        X = x - shoulder * cos(joint1_value)
+        Y = y + shoulder * sin(joint1_value)
+        beta = atan((link3_length * sin(joint3_value)) / (link2_length + link3_length * cos(joint3_value)))
+        alpha_v = ((z - (link4_length + link5_length) * cos(radians(w))) - link1_length)
+        alpha_hp = (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w)))
+        alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w)))
 
         if ori == 0:
             # ориентация плечо вперед
@@ -344,83 +344,96 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):  # Исправить вс�
                 else:
                     # если точка между осью А1 и осью А2
                     alpha = atan(alpha_hm / alpha_v)
-                A2 = alpha - beta
+                joint2_value = alpha - beta
             else:
                 # если 4-ая степень опускается ниже 2-ой
                 alpha = atan(alpha_v / alpha_hp)
-                A2 = pi / 2 - alpha - beta
+                joint2_value = pi / 2 - alpha - beta
         else:
             # ориентация плечо назад
             if alpha_v >= 0:
                 alpha = atan(alpha_hp / alpha_v)
-                A2 = -alpha - beta
+                joint2_value = -alpha - beta
             else:
                 alpha = atan(alpha_v / alpha_hp)
-                A2 = -pi / 2 + alpha - beta
-        return A2
+                joint2_value = -pi / 2 + alpha - beta
+        return joint2_value
 
-    def a3_calc(x, y, z, w, ori, elbow, A1):
+    def calculate_joint3_value(x, y, z, w, ori, elbow, joint1_value):
         u"""Расчет третьей степени подвижности."""
-        X = x - a * cos(A1)
-        Y = y + a * sin(A1)
+        X = x - shoulder * cos(joint1_value)
+        Y = y + shoulder * sin(joint1_value)
         if ori == 0:
             if sqrt(x ** 2 + y ** 2) >= 33:
-                Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+                Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
             else:
-                Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+                Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
             if elbow == 0:
                 # локоть вверх
-                A3 = acos(Cos_A3)
+                joint3_value = acos(Cos_joint3_value)
             else:
                 # локоть вниз
-                A3 = -acos(Cos_A3)
+                joint3_value = -acos(Cos_joint3_value)
         else:
-            Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
+            Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
             if elbow == 0:
-                A3 = -acos(Cos_A3)
+                joint3_value = -acos(Cos_joint3_value)
             else:
-                A3 = acos(Cos_A3)
-        return A3
+                joint3_value = acos(Cos_joint3_value)
+        return joint3_value
 
-    def a4_calc(w, ori, A2, A3):
+    def calculate_joint4_value(w, ori, joint2_value, joint3_value):
         u"""Расчет четвертой степени подвижности."""
         if ori == 0:
-            A4l = radians(w) - A2 - A3
+            joint4_valuel = radians(w) - joint2_value - joint3_value
         else:
-            A4l = -1 * radians(w) - A2 - A3
+            joint4_valuel = -1 * radians(w) - joint2_value - joint3_value
 
-        if A4l > pi:
+        if joint4_valuel > pi:
             # перевод угла в формат от -pi до pi
-            A4 = A4l - 2 * pi
-        elif A4l < - pi:
-            A4 = A4l + 2 * pi
+            joint4_value = joint4_valuel - 2 * pi
+        elif joint4_valuel < - pi:
+            joint4_value = joint4_valuel + 2 * pi
         else:
-            A4 = A4l
-        return A4
+            joint4_value = joint4_valuel
+        return joint4_value
 
-    L1 = 147.0
-    L2 = 155.0
-    L3 = 135.0
-    L4 = 217.0
-    L5 = 0.5
-    a = 33.0
-    a5 = 0
-    A1 = a1_calc(x, y, ori)
-    A3 = a3_calc(x, y, z, w, ori, elbow, A1)
-    A2 = a2_calc(x, y, z, w, ori, A1, A3)
-    A4 = a4_calc(w, ori, A2, A3)
-    A5 = radians(a5)
-    a01 = radians(169) - 0.0100693
-    a02 = radians(65) - 0.0100693
-    a03 = radians(-146) + 0.015708
-    a04 = radians(102.5) - 0.0221239
-    a05 = radians(169) - 0.11062
-    Q0 = [a01, a02, a03, a04, a05]
-    Q1 = [A1, A2, A3, A4, A5]
-    Q3 = []
-    for i in range(5):
-        Q3.append(Q0[i] + Q1[i])
-    return Q3
+    link1_length = 147.0
+    link2_length = 155.0
+    link3_length = 135.0
+    link4_length = 217.0
+    link5_length = 0.5
+    shoulder = 33.0
+    joint5_rotation = 0  # Degrees
+    # Calculating joints values
+    joint1_value = calculate_joint1_value(x, y, ori)
+    joint3_value = calculate_joint3_value(x, y, z, w, ori, elbow, joint1_value)
+    joint2_value = calculate_joint2_value(x, y, z, w, ori, joint1_value,
+                                          joint3_value)
+    joint4_value = calculate_joint4_value(w, ori, joint2_value, joint3_value)
+    joint5_value = radians(joint5_rotation)
+    joints_values = [joint1_value,
+                     joint2_value,
+                     joint3_value,
+                     joint4_value,
+                     joint5_value]
+    # Joints corrections
+    joint1_correction = radians(169) - 0.0100693
+    joint2_correction = radians(65) - 0.0100693
+    joint3_correction = radians(-146) + 0.015708
+    joint4_correction = radians(102.5) - 0.0221239
+    joint5_correction = radians(169) - 0.11062
+    joints_correction = [joint1_correction,
+                         joint2_correction,
+                         joint3_correction,
+                         joint4_correction,
+                         joint5_correction]
+    # Final result
+    result = []
+    for index, value in enumerate(joints_values):
+        correction = joints_correction[index]
+        result.append(value + correction)
+    return result
 
 
 def _calculate_angular_velocity(current, goal):
