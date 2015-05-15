@@ -10,7 +10,6 @@ from sensor_msgs.msg import JointState
 from math import cos, sin, atan, radians, sqrt, pi, acos
 
 
-
 class YouBot(object):
 
     u"""youBot class.
@@ -35,9 +34,9 @@ class YouBot(object):
         rospy.init_node('rospyoubot')
         self.arm = Arm()
         self.base = Base()
-        rospy.on_shutdown(self.emergencyStop)
+        rospy.on_shutdown(self.emergency_stop)
 
-    def emergencyStop(self):
+    def emergency_stop(self):
         """Stop youBot, and move arm to default position."""
         self.base.set_velocity(0, 0, 0)
         self.arm.set_joints_velocities(0, 0, 0, 0, 0)
@@ -109,34 +108,44 @@ class Base(object):
         return position
 
     # TODO: Make it work with different speeds
-    def lin(self, Xwp, Ywp, Phip, speed=0.5):
-        u"""Move youBot base to the point with coordinate (Xwp, Ywp).
+    def lin(self, world_xp, world_yp, goal_ori, speed=0.5):
+        u"""Move youBot base to the point with coordinate (world_xp, world_yp).
 
-        Xwp, Ywp - Coordinates in odometry coordinate system (Meteres)
-        Phip - Angle between Odometry X axis and robot X axis (Radians)
+        world_xp, world_yp - Coordinates in odometry coordinate system (Meteres)
+        goal_ori - Angle between Odometry X axis and robot X axis (Radians)
         """
         psi = 0.05
-        Xwr, Ywr, Phir = self.get_odometry()
-        while (abs(Xwp - Xwr) >= psi or abs(Ywp - Ywr) >= psi) and not rospy.is_shutdown():
-            Xwr, Ywr, Phir = self.get_odometry()
-            print "World coordinates: X={}, Y={}, Phi={}".format(Xwr, Ywr, Phir)
-            Xyp, Yyp = _transform_coordinates(Xwp, Ywp, Xwr, Ywr, Phir)
-            print "Robroot coordinates: X={}, Y={}".format(Xyp, Yyp)
-            Vx, Vy = _calculate_velocity(Xyp, Yyp)
-            Vx *= speed
-            Vy *= speed
-            print "Velocities: Vx={}, Vy={}".format(Vx, Vy)
+        world_xr, world_yr, current_ori = self.get_odometry()
+        # Движение по прямой
+        while (abs(world_xp - world_xr) >= psi or abs(world_yp - world_yr) >= psi) and not rospy.is_shutdown():
+            world_xr, world_yr, current_ori = self.get_odometry()
+            print "World coordinates: X={}, Y={}, Phi={}".format(world_xr,
+                                                                 world_yr,
+                                                                 current_ori)
+            robot_xp, robot_yp = _transform_coordinates(world_xp,
+                                                        world_yp,
+                                                        world_xr,
+                                                        world_yr,
+                                                        current_ori)
+            print "Robroot coordinates: X={}, Y={}".format(robot_xp, robot_yp)
+            velocity_x, velocity_y = _calculate_velocity(robot_xp, robot_yp)
+            velocity_x *= speed
+            velocity_y *= speed
+            print "Velocities: velocity_x={}, velocity_y={}".format(velocity_x,
+                                                                    velocity_y)
             print '____________________________________________________________'
-            self.set_velocity(Vx, Vy, 0)
+            self.set_velocity(velocity_x, velocity_y, 0)
             # self.rate.sleep()
         self.set_velocity(0, 0, 0)
-        while abs(Phip - Phir) >= psi and not rospy.is_shutdown():
+        # Изменение ориентации
+        while abs(goal_ori - current_ori) >= psi and not rospy.is_shutdown():
             # Обновляем текущие координаты
-            Xwr, Ywr, Phir = self.get_odometry()
-            print "Goal orientation: {}".format(Phip)
+            world_xr, world_yr, current_ori = self.get_odometry()
+            print "Goal orientation: {}".format(goal_ori)
             # вычислаяем скорость
-            print 'Current orientation: ', Phir
-            ang_z = _calculate_angular_velocity(Phir, Phip)
+            print 'Current orientation: ', current_ori
+            ang_z = _calculate_angular_velocity(current_ori,
+                                                goal_ori)
             print "Velocity: {}".format(ang_z)
             print '____________________________________________________________'
             # Отправляем сообщение с вычесленной скоростью
@@ -227,9 +236,9 @@ class Arm(object):
         Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-        Q = _joints_angles_for_pose(x, y, z, w, ori, elbow)
-        if _check_pose(Q, x, y, z):
-            self.set_joints_angles(*Q)
+        joints_angles = _joints_angles_for_pose(x, y, z, w, ori, elbow)
+        if _check_pose(joints_angles, x, y, z):
+            self.set_joints_angles(*joints_angles)
         else:
             print 'Woops!'
 
@@ -241,7 +250,8 @@ class Gripper(object):
     def __init__(self):
         """Gripper constructor."""
         self.gripper_position = JointPositions()
-        self.gripper_position_publisher = rospy.Publisher('arm_1/gripper_controller/position_command',
+        gripper_topic = 'arm_1/gripper_controller/position_command'
+        self.gripper_position_publisher = rospy.Publisher(gripper_topic,
                                                           JointPositions)
 
     def set_gripper_state(self, open_gripper=True):
@@ -282,12 +292,12 @@ class Gripper(object):
         self.gripper_position_publisher.publish(self.gripper_position)
 
 
-def _joints_angles_for_pose(x, y, z, w, ori, elbow):
+def _joints_angles_for_pose(x, y, z, w, ori, elbow):  # Исправить все предупреждения
     u"""Просчитывает положения степеней подвижности для заданного положения."""
     def a1_calc(x, y, ori):
         u"""Расчет первой степени подвижности."""
         if ori == 0:
-        # 1. ориентация плечо вперед
+            # 1. ориентация плечо вперед
             if y == 0:
                 A1 = 0
             elif x == 0 and y > 0:
@@ -301,7 +311,7 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
             elif x < 0 and y < 0:
                 A1 = -atan(y / x) + pi
         else:
-        # 2. ориентация плечо назад
+            # 2. ориентация плечо назад
             if y == 0:
                 A1 = pi
             elif x == 0 and y > 0:
@@ -326,21 +336,21 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w)))
 
         if ori == 0:
-        # ориентация плечо вперед
-            if  alpha_v >= 0:
-            # если 4-ая степень выше 2-ой
+            # ориентация плечо вперед
+            if alpha_v >= 0:
+                # если 4-ая степень выше 2-ой
                 if sqrt(x ** 2 + y ** 2) >= 33:
                     alpha = atan(alpha_hp / alpha_v)
                 else:
-                # если точка между осью А1 и осью А2
+                    # если точка между осью А1 и осью А2
                     alpha = atan(alpha_hm / alpha_v)
                 A2 = alpha - beta
             else:
-            # если 4-ая степень опускается ниже 2-ой
+                # если 4-ая степень опускается ниже 2-ой
                 alpha = atan(alpha_v / alpha_hp)
                 A2 = pi / 2 - alpha - beta
         else:
-        # ориентация плечо назад
+            # ориентация плечо назад
             if alpha_v >= 0:
                 alpha = atan(alpha_hp / alpha_v)
                 A2 = -alpha - beta
@@ -353,16 +363,16 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         u"""Расчет третьей степени подвижности."""
         X = x - a * cos(A1)
         Y = y + a * sin(A1)
-        if ori == 0:                                            # сделать тут try
+        if ori == 0:
             if sqrt(x ** 2 + y ** 2) >= 33:
                 Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
             else:
                 Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
             if elbow == 0:
-            # локоть вверх
+                # локоть вверх
                 A3 = acos(Cos_A3)
             else:
-            # локоть вниз
+                # локоть вниз
                 A3 = -acos(Cos_A3)
         else:
             Cos_A3 = ((z - (L4 + L5) * cos(radians(w)) - L1) ** 2 + (sqrt(X ** 2 + Y ** 2) - (L4 + L5) * sin(radians(w))) ** 2 - L2 ** 2 - L3 ** 2) / (2 * L2 * L3)
@@ -377,10 +387,10 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         if ori == 0:
             A4l = radians(w) - A2 - A3
         else:
-            A4l = -radians(w)- A2 - A3
+            A4l = -1 * radians(w) - A2 - A3
 
         if A4l > pi:
-        # перевод угла в формат от -pi до pi
+            # перевод угла в формат от -pi до pi
             A4 = A4l - 2 * pi
         elif A4l < - pi:
             A4 = A4l + 2 * pi
@@ -408,9 +418,9 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     Q0 = [a01, a02, a03, a04, a05]
     Q1 = [A1, A2, A3, A4, A5]
     Q3 = []
-    for i in range(5):  # сделать, чтобы проверка осуществлялась до отправки сообщения
+    for i in range(5):
         Q3.append(Q0[i] + Q1[i])
-    return Q3      # если надо - тупо вызовешь all_ax_calc и он отдаст координаты от свечки в радианах
+    return Q3
 
 
 def _calculate_angular_velocity(current, goal):
@@ -453,7 +463,7 @@ def _check_pose(q, x, y, z):
         0.0221239 <= q[3] <= 3.4292 and
         0.1106200 <= q[4] <= 5.64159):
         if not(z < 0 and x < 150 and -150 < y < 150):
-        # ограничения размера тележки
+            # ограничения размера тележки
             return True
         else:
             return False
