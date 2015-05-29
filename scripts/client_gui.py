@@ -282,8 +282,8 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
         ttk.Label(self, text='Схват:', width=6, anchor='e').grid(column=0,
-                                                                 row=0,
-                                                                 sticky='e')
+                                                                      row=0,
+                                                                      sticky='e')
         self.close_button = ttk.Button(self, text='Закрыть', width=7)
         self.close_button.grid(column=1, row=0)
         self.close_button.bind('<Button-1>', self.close_gripper)
@@ -382,6 +382,7 @@ class AutomaticControls(ttk.Frame):
             message = "Goint to point {}, with coordinates {}"
             message = message.format(name, POINTS_DICT[name])
             print message
+            R1.base.set_velocity(0, 0, 0)
             R1.base.lin(*POINTS_DICT[name])
             R1.base.set_velocity(0, 0, 0)
 
@@ -445,6 +446,7 @@ class BaseMotionAddition(tk.Toplevel):
 
     def save(self):
         u"""Сохраняет точку в список точек."""
+        # TODO: Переделать проверку ошибок
         error_message = ""
         points_list = listbox_to_list(self.parent.pt_list.get())
         # Point name check
@@ -490,6 +492,10 @@ class BaseMotionAddition(tk.Toplevel):
         self.X.insert(0, odometry[0])
         self.Y.insert(0, odometry[1])
         self.Phi.insert(0, odometry[2])
+
+    def input_is_valid(self):
+        u"""Check input data for validity."""
+        pass
 
 
 def key_pressed(event):
@@ -576,8 +582,8 @@ if __name__ == '__main__':
     BASE_VELOCITY = 1
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
-    ARM_JOINTS_ANGLES = [tk.StringVar()] * 5
-    ODOMETRY = [tk.StringVar()] * 3
+    ARM_JOINTS_ANGLES = [tk.StringVar() for _ in range(5)]
+    ODOMETRY = [tk.StringVar() for _ in range(3)]
     POINTS_DICT = {}
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
