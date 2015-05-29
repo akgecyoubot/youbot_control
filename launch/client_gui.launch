@@ -11,6 +11,7 @@ or enable the USE_SETCAP flag in the cmake file and recompile again.
 
 <launch>
 
-	<node name="Client GUI" pkg="pybotserver" type="client_gui.py" output="screen" required="true"/>
+	<node name="cleint_gui" pkg="pybotserver" type="client_gui.py" output="screen" required="true"/>
+	<node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find pybotserver)/rviz/odometry.rviz"/>
 		  
 </launch>
