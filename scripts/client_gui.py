@@ -281,9 +281,12 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
-        ttk.Label(self, text='Схват:', width=6, anchor='e').grid(column=0,
-                                                                      row=0,
-                                                                      sticky='e')
+        ttk.Label(self,
+                  text='Схват:',
+                  width=6,
+                  anchor='e').grid(column=0,
+                                   row=0,
+                                   sticky='e')
         self.close_button = ttk.Button(self, text='Закрыть', width=7)
         self.close_button.grid(column=1, row=0)
         self.close_button.bind('<Button-1>', self.close_gripper)
@@ -336,9 +339,9 @@ class AutomaticControls(ttk.Frame):
         self.add_button.grid(column=0, row=0)
         self.add_button.bind('<Button-1>', self.add_to_list)
         # Edit button
-        ttk.Button(self.buttons_frame,
-                   text=u'Редактировать',
-                   width=9).grid(column=0, row=1)
+        # ttk.Button(self.buttons_frame,
+        # text=u'Редактировать',
+        # width=9).grid(column=0, row=1)
         # Remove button
         self.remove_button = ttk.Button(self.buttons_frame,
                                         text=u'Удалить',
@@ -446,45 +449,20 @@ class BaseMotionAddition(tk.Toplevel):
 
     def save(self):
         u"""Сохраняет точку в список точек."""
-        # TODO: Переделать проверку ошибок
-        error_message = ""
         points_list = listbox_to_list(self.parent.pt_list.get())
-        # Point name check
         name = 'Base:{}'.format(self.point_name.get())
-        if name not in POINTS_DICT.keys():
-            point_name_error = False
-        else:
-            point_name_error = True
-            error_message += "Точка с таким именем уже существует"
-        # X coordinate check
-        if isfloat(self.X.get()):
-            x = self.X.get()
-            x_error = False
-        else:
-            x_error = True
-            error_message += u"Координата X не является числом\n"
-        if isfloat(self.Y.get()):
-            y = self.Y.get()
-            y_error = False
-        else:
-            y_error = True
-            error_message += u"Координата Y не является числом\n"
-        # Phi check
-        if isfloat(self.Phi.get()):
-            phi = self.Phi.get()
-            phi_error = False
-        else:
-            phi_error = True
-            error_message += u"Координата \u03c6 не является числом\n"
-        if not (point_name_error or x_error or y_error or phi_error):
+        x = self.X.get()
+        y = self.Y.get()
+        phi = self.Phi.get()
+        if self.input_is_valid(name, x, y, phi):
             POINTS_DICT[name] = (float(x), float(y), float(phi))
             points_list.append(name)
             listbox_string = ' '.join(points_list)
             self.parent.pt_list.set(listbox_string)
             self.destroy()
         else:
-            tkMessageBox.showerror(u"Ошибка добавления точки",
-                                   error_message)
+            tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                   u"Проверьте поля ввода.")
 
     def touch_up(self):
         u"""Записывает текущие координаты базы в поля ввода координат."""
@@ -493,9 +471,16 @@ class BaseMotionAddition(tk.Toplevel):
         self.Y.insert(0, odometry[1])
         self.Phi.insert(0, odometry[2])
 
-    def input_is_valid(self):
+    def input_is_valid(self, name, x, y, phi):
         u"""Check input data for validity."""
-        pass
+        name_ok = name not in POINTS_DICT.keys()
+        x_ok = isfloat(self.X.get())
+        y_ok = isfloat(self.Y.get())
+        phi_ok = isfloat(self.Phi.get())
+        if name_ok and x_ok and y_ok and phi_ok:
+            return True
+        else:
+            return False
 
 
 def key_pressed(event):
