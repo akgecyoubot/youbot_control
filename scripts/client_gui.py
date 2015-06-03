@@ -377,6 +377,7 @@ class AutomaticControls(ttk.Frame):
         BaseMotionAddition(self)
 
     def add_arm_point(self, event):
+        u"""Span window to add Arm point."""
         ArmMotionAddition(self)
 
     def remove_point(self, event):
@@ -493,7 +494,11 @@ class BaseMotionAddition(tk.Toplevel):
 
 
 class ArmMotionAddition(tk.Toplevel):
+
+    u"""Window that add arm motion to points lists."""
+
     def __init__(self, parent):
+        u"""Class constructor."""
         tk.Toplevel.__init__(self, parent)
         self.parent = parent
         self.title(u'Движение манипулятора')
@@ -505,28 +510,34 @@ class ArmMotionAddition(tk.Toplevel):
                                      text=u"Введите координаты и углы ориентации")
         coordinates.grid(row=0, column=0, sticky='nswe')
         # X
+        self.X = tk.StringVar()
         ttk.Label(coordinates, text=u"X:").grid(row=0, column=0)
-        x_input = ttk.Entry(coordinates)
+        x_input = ttk.Entry(coordinates, textvariable=self.X)
         x_input.grid(row=0, column=1)
         # Y
+        self.Y = tk.StringVar()
         ttk.Label(coordinates, text=u"Y:").grid(row=1, column=0)
-        y_input = ttk.Entry(coordinates)
+        y_input = ttk.Entry(coordinates, textvariable=self.Y)
         y_input.grid(row=1, column=1)
         # Z
+        self.Z = tk.StringVar()
         ttk.Label(coordinates, text=u"Z:").grid(row=2, column=0)
-        z_input = ttk.Entry(coordinates)
+        z_input = ttk.Entry(coordinates, textvariable=self.Z)
         z_input.grid(row=2, column=1)
         # W
+        self.W = tk.StringVar()
         ttk.Label(coordinates, text=u"W:").grid(row=0, column=2)
-        w_input = ttk.Entry(coordinates)
+        w_input = ttk.Entry(coordinates, textvariable=self.W)
         w_input.grid(row=0, column=3)
         # O
+        self.O = tk.StringVar()
         ttk.Label(coordinates, text=u"O:").grid(row=1, column=2)
-        o_input = ttk.Entry(coordinates)
+        o_input = ttk.Entry(coordinates, textvariable=self.O)
         o_input.grid(row=1, column=3)
         # Name
+        self.point_name = tk.StringVar()
         ttk.Label(coordinates, text=u"Имя:").grid(row=2, column=2)
-        name_input = ttk.Entry(coordinates)
+        name_input = ttk.Entry(coordinates, textvariable=self.point_name)
         name_input.grid(row=2, column=3)
         # Configuration
         configuration = ttk.LabelFrame(frame, text=u"Выберите конфигурацию")
@@ -564,12 +575,24 @@ class ArmMotionAddition(tk.Toplevel):
         # Touch Up
         buttons = ttk.Frame(frame)
         buttons.grid(row=0, column=1)
-        ttk.Button(buttons, text="Touch Up").grid(row=0, column=0)
-        ttk.Button(buttons, text="Move Arm").grid(row=1, column=0)
+        ttk.Button(buttons,
+                   text="Touch Up",
+                   command=self.touch_up).grid(row=0,
+                                               column=0)
+        ttk.Button(buttons,
+                   text="Move Arm",
+                   command=self.move_arm).grid(row=1,
+                                               column=0)
         # Save
-        ttk.Button(frame, text=u"Сохранить").grid(row=2, column=0)
+        ttk.Button(frame,
+                   text=u"Сохранить",
+                   command=self.save).grid(row=2,
+                                           column=0)
         # Cancel
-        ttk.Button(frame, text=u"Отмена").grid(row=2, column=1)
+        ttk.Button(frame,
+                   text=u"Отмена",
+                   command=self.cancel).grid(row=2,
+                                             column=1)
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
         for child in frame.winfo_children():
@@ -580,6 +603,42 @@ class ArmMotionAddition(tk.Toplevel):
             child.grid_configure(padx=5, pady=5)
         for child in gripper.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
+    def save(self):
+        u"""Save arm position to points list."""
+        if self.input_is_valid():
+            # Add point to points list
+            self.destroy()
+        else:
+            tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                   u"Проверьте поля ввода.")
+
+    def move_arm(self):
+        u"""Move arm to entered coordinates."""
+        pass
+
+    def touch_up(self):
+        u"""Save current joints angles as point."""
+        pass
+
+    def cancel(self):
+        u"""Закрывает окно, не сохраняя результат."""
+        self.destroy()
+
+    def input_is_valid(self):
+        u"""Check if all inputs are valid."""
+        x_ok = isfloat(self.X.get())
+        y_ok = isfloat(self.Y.get())
+        z_ok = isfloat(self.Z.get())
+        w_ok = isfloat(self.W.get())
+        o_ok = isfloat(self.O.get())
+        name = 'Arm:' + self.point_name.get()
+        name_ok = name not in POINTS_DICT.keys()
+        everything_ok = x_ok and y_ok and z_ok and w_ok and o_ok and name_ok
+        if everything_ok:
+            return True
+        else:
+            return False
 
 
 def key_pressed(event):
