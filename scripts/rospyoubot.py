@@ -436,6 +436,13 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     return result
 
 
+def _joints_positions_to_cartesian(joint_1, joint_2, joint_3, joint_4, joint_5):
+    u"""Прямая задача кинематики.
+
+    Переводит обобщенные координты в декартовы"""
+    pass
+
+
 def _calculate_angular_velocity(current, goal):
     u"""Calculate angular velocity to change current orientation to goal."""
     if current > goal:
