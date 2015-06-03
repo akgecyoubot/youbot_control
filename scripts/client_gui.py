@@ -332,12 +332,18 @@ class AutomaticControls(ttk.Frame):
         # Buttons frame
         self.buttons_frame = ttk.Frame(self)
         self.buttons_frame.grid(column=2, row=0, sticky='n')
-        # Add button
-        self.add_button = ttk.Button(self.buttons_frame,
-                                     text=u'Платформа',
-                                     width=9)
-        self.add_button.grid(column=0, row=0)
-        self.add_button.bind('<Button-1>', self.add_to_list)
+        # Add base button
+        self.add_base_button = ttk.Button(self.buttons_frame,
+                                          text=u'Платформа',
+                                          width=9)
+        self.add_base_button.grid(column=0, row=0)
+        self.add_base_button.bind('<Button-1>', self.add_to_list)
+        # Add arm button
+        self.add_arm_button = ttk.Button(self.buttons_frame,
+                                         text=u'Манипулятор',
+                                         width=9)
+        self.add_arm_button.grid(column=0, row=1)
+        self.add_arm_button.bind('<Button-1>', self.add_arm_point)
         # Edit button
         # ttk.Button(self.buttons_frame,
         # text=u'Редактировать',
@@ -369,6 +375,9 @@ class AutomaticControls(ttk.Frame):
     def add_to_list(self, event):
         u"""Добавляет движение в список движений."""
         BaseMotionAddition(self)
+
+    def add_arm_point(self, event):
+        ArmMotionAddition(self)
 
     def remove_point(self, event):
         u"""Удаляет выбранное движение из списка."""
@@ -481,6 +490,96 @@ class BaseMotionAddition(tk.Toplevel):
             return True
         else:
             return False
+
+
+class ArmMotionAddition(tk.Toplevel):
+    def __init__(self, parent):
+        tk.Toplevel.__init__(self, parent)
+        self.parent = parent
+        self.title(u'Движение манипулятора')
+        self.resizable(0, 0)
+        frame = ttk.Frame(self)
+        frame.grid(row=0, column=0, sticky='nswe')
+        # Coordinates
+        coordinates = ttk.LabelFrame(frame,
+                                     text=u"Введите координаты и углы ориентации")
+        coordinates.grid(row=0, column=0, sticky='nswe')
+        # X
+        ttk.Label(coordinates, text=u"X:").grid(row=0, column=0)
+        x_input = ttk.Entry(coordinates)
+        x_input.grid(row=0, column=1)
+        # Y
+        ttk.Label(coordinates, text=u"Y:").grid(row=1, column=0)
+        y_input = ttk.Entry(coordinates)
+        y_input.grid(row=1, column=1)
+        # Z
+        ttk.Label(coordinates, text=u"Z:").grid(row=2, column=0)
+        z_input = ttk.Entry(coordinates)
+        z_input.grid(row=2, column=1)
+        # W
+        ttk.Label(coordinates, text=u"W:").grid(row=0, column=2)
+        w_input = ttk.Entry(coordinates)
+        w_input.grid(row=0, column=3)
+        # O
+        ttk.Label(coordinates, text=u"O:").grid(row=1, column=2)
+        o_input = ttk.Entry(coordinates)
+        o_input.grid(row=1, column=3)
+        # Name
+        ttk.Label(coordinates, text=u"Имя:").grid(row=2, column=2)
+        name_input = ttk.Entry(coordinates)
+        name_input.grid(row=2, column=3)
+        # Configuration
+        configuration = ttk.LabelFrame(frame, text=u"Выберите конфигурацию")
+        configuration.grid(row=1, column=0, sticky='nswe')
+        self.elbow = tk.IntVar()
+        self.oriset = tk.IntVar()
+        ttk.Radiobutton(configuration,
+                        text=u"Локоть вверх",
+                        variable=self.elbow,
+                        value=0).grid(row=0, column=0)
+        ttk.Radiobutton(configuration,
+                        text=u"Локоть вниз",
+                        variable=self.elbow,
+                        value=1).grid(row=1, column=0)
+        ttk.Radiobutton(configuration,
+                        text=u"Прямое плечо",
+                        variable=self.oriset,
+                        value=0).grid(row=0, column=1)
+        ttk.Radiobutton(configuration,
+                        text=u"Обратное плечо",
+                        variable=self.oriset,
+                        value=1).grid(row=1, column=1)
+        # Gripper
+        self.gripper_open = tk.IntVar()
+        gripper = ttk.LabelFrame(frame, text=u"Состояние схвата")
+        gripper.grid(row=1, column=1, sticky='nswe')
+        ttk.Radiobutton(gripper,
+                        text=u"Открыт",
+                        variable=self.gripper_open,
+                        value=1).grid(row=0, column=0)
+        ttk.Radiobutton(gripper,
+                        text=u"Закрыт",
+                        variable=self.gripper_open,
+                        value=0).grid(row=1, column=0)
+        # Touch Up
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=0, column=1)
+        ttk.Button(buttons, text="Touch Up").grid(row=0, column=0)
+        ttk.Button(buttons, text="Move Arm").grid(row=1, column=0)
+        # Save
+        ttk.Button(frame, text=u"Сохранить").grid(row=2, column=0)
+        # Cancel
+        ttk.Button(frame, text=u"Отмена").grid(row=2, column=1)
+        for child in self.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in frame.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in coordinates.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in configuration.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in gripper.winfo_children():
+            child.grid_configure(padx=5, pady=5)
 
 
 def key_pressed(event):
