@@ -298,8 +298,10 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         u"""Расчет первой степени подвижности."""
         if ori == 0:
             # 1. ориентация плечо вперед
-            if y == 0:
+            if y == 0 and x >= 0:
                 joint1_value = 0
+            elif y == 0 and x < 0:
+                joint1_value = pi
             elif x == 0 and y > 0:
                 joint1_value = -pi / 2
             elif x == 0 and y < 0:
@@ -312,8 +314,10 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
                 joint1_value = -atan(y / x) + pi
         else:
             # 2. ориентация плечо назад
-            if y == 0:
+            if y == 0 and x > 0:
                 joint1_value = pi
+            elif y == 0 and x <= 0:
+                joint1_value = 0
             elif x == 0 and y > 0:
                 joint1_value = pi / 2
             elif x == 0 and y < 0:
@@ -336,27 +340,28 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         alpha_hm = (-sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w)))
 
         if ori == 0:
-            # ориентация плечо вперед
-            if alpha_v >= 0:
-                # если 4-ая степень выше 2-ой
-                if sqrt(x ** 2 + y ** 2) >= 33:
-                    alpha = atan(alpha_hp / alpha_v)
-                else:
-                    # если точка между осью А1 и осью А2
-                    alpha = atan(alpha_hm / alpha_v)
-                joint2_value = alpha - beta
+            if  sqrt(x ** 2 + y ** 2) >= 33 and alpha_v <= 0 and alpha_hp >= 33:
+                alpha = - atan(alpha_v / alpha_hp) + pi / 2    # наверняка проблема при alpha_hp == 0 - надо проверить как-то
+
+            elif sqrt(x ** 2 + y ** 2) >= 33 and alpha_v <= 0 and alpha_hp < 33:   # это недопустимо роботом, но оставлю пока для проверки
+                alpha = - atan(alpha_v / alpha_hp) - pi / 2
+
+            elif sqrt(x ** 2 + y ** 2) < 33 and alpha_v >= 0:
+                alpha = atan(alpha_hm / alpha_v)
+
+            elif sqrt(x ** 2 + y ** 2) < 33 and alpha_v < 0:            # это тоже вряд ли возможно
+                alpha = - atan(alpha_v / alpha_hm) - pi / 2
             else:
-                # если 4-ая степень опускается ниже 2-ой
-                alpha = atan(alpha_v / alpha_hp)
-                joint2_value = pi / 2 - alpha - beta
-        else:
-            # ориентация плечо назад
-            if alpha_v >= 0:
                 alpha = atan(alpha_hp / alpha_v)
-                joint2_value = -alpha - beta
+            joint2_value = alpha - beta
+        else:
+            if alpha_v <= 0 and alpha_hp >= 0:      # перепроверить при alpha_v == 0, но скорее всего так
+                alpha = -atan(alpha_v / alpha_hp) + pi / 2
+            elif alpha_v <= 0 and alpha_hp < 0:
+                alpha = -atan(alpha_v / alpha_hp) - pi / 2
             else:
-                alpha = atan(alpha_v / alpha_hp)
-                joint2_value = -pi / 2 + alpha - beta
+                alpha = atan(alpha_hp / alpha_v)
+            joint2_value = -alpha - beta
         return joint2_value
 
     def calculate_joint3_value(x, y, z, w, ori, elbow, joint1_value):
@@ -365,17 +370,21 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
         Y = y + shoulder * sin(joint1_value)
         if ori == 0:
             if sqrt(x ** 2 + y ** 2) >= 33:
-                Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
+                Cos_joint3_value = (((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 +
+                                   (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 -
+                                   link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length))
             else:
-                Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (-sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
+                Cos_joint3_value = (((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 +
+                                   (-sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 -
+                                   link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length))
             if elbow == 0:
-                # локоть вверх
                 joint3_value = acos(Cos_joint3_value)
             else:
-                # локоть вниз
                 joint3_value = -acos(Cos_joint3_value)
         else:
-            Cos_joint3_value = ((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 + (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 - link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length)
+            Cos_joint3_value = (((z - (link4_length + link5_length) * cos(radians(w)) - link1_length) ** 2 +
+                               (sqrt(X ** 2 + Y ** 2) - (link4_length + link5_length) * sin(radians(w))) ** 2 -
+                               link2_length ** 2 - link3_length ** 2) / (2 * link2_length * link3_length))
             if elbow == 0:
                 joint3_value = -acos(Cos_joint3_value)
             else:
@@ -437,10 +446,12 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
 
 
 def _joints_positions_to_cartesian(joint_1, joint_2, joint_3, joint_4, joint_5):
-    u"""Прямая задача кинематики.
-
-    Переводит обобщенные координты в декартовы"""
-    pass
+    u"""Прямая задача кинематики."""
+    x_calc = cos(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33)
+    y_calc = -sin(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33)
+    z_calc = 217.5 * cos(joint_2 + joint_3 + joint_4) + 135 * cos(joint_2 + joint_3) + 155 * cos(joint_2) + 147
+    """Переводит обобщенные координты в декартовы"""
+    return x_calc, y_calc, z_calc
 
 
 def _calculate_angular_velocity(current, goal):
