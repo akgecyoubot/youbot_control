@@ -447,18 +447,12 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     return result
 
 
-<<<<<<< HEAD
 def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, joint_5):
-=======
-#TODO работает не верно
-def _joints_positions_to_cartesian(joint_1, joint_2, joint_3, joint_4, joint_5):
->>>>>>> 79316c4a1c2ad28036196ca2463c1848fff93712
     u"""
     Прямая задача кинематики.
 
     Переводит обобщенные координты в декартовы
     """
-<<<<<<< HEAD
     joint1_correction = radians(169) - 0.0100693
     joint2_correction = radians(65) - 0.0100693
     joint3_correction = radians(-146) + 0.015708
@@ -496,12 +490,6 @@ def _joints_positions_to_cartesian(joint_1, joint_2, joint_3, joint_4, joint_5):
     print x_calc, y_calc, z_calc, w_calc
 
     return x_calc, y_calc, z_calc, w_calc
-=======
-    x_calc = (cos(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33))
-    y_calc = (-sin(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33))
-    z_calc = (217.5 * cos(joint_2 + joint_3 + joint_4) + 135 * cos(joint_2 + joint_3) + 155 * cos(joint_2) + 147)
-    return x_calc, y_calc, z_calc
->>>>>>> 79316c4a1c2ad28036196ca2463c1848fff93712
 
 
 def _calculate_angular_velocity(current, goal):
@@ -538,7 +526,6 @@ def _transform_coordinates(xwp, ywp, xwr, ywr, phir):
 
 def _check_pose(q, x, y, z, w, ori):
     u"""Проверяет заданное положение манипулятора."""
-<<<<<<< HEAD
 
     x = round(x, 1)
     y = round(y, 1)
@@ -552,27 +539,7 @@ def _check_pose(q, x, y, z, w, ori):
     platform_ok = not(z < 30 and x < 150 and -150 < y < 150)
     kinematic_ok = (x, y, z, w) == _joints_positions_to_cartesian(ori, *q)
     if (axis_ok and platform_ok and kinematic_ok):
-=======
-    x = round(x, 1)
-    y = round(y, 1)
-    z = round(z, 1)
-    angles_ok = (0.0100692 <= q[0] <= 5.84014 and
-                 0.0100692 <= q[1] <= 2.61799 and
-                 -5.0221239 <= q[2] <= -0.015708 and
-                 0.0221239 <= q[3] <= 3.4292 and
-                 0.1106200 <= q[4] <= 5.64159)
-    coordinates_ok = not(z < 0 and x < 150 and -150 < y < 150)
-    rounded = list(round(val, 1) for val in _joints_positions_to_cartesian(*q))
-    print x,y,z
-    print rounded
-    print '-----------------------'
-    deg_q = [degrees(val) for val in q]
-    print deg_q
-    # kinematic_ok = ((x, y, z) == rounded)
-    kinematic_ok = True
-    everything_ok = coordinates_ok and angles_ok and kinematic_ok
-    if everything_ok:
->>>>>>> 79316c4a1c2ad28036196ca2463c1848fff93712
+
         return True
     else:
         return False
