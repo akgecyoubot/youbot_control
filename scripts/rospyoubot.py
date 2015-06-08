@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from brics_actuator.msg import JointPositions, JointValue, JointVelocities
 from sensor_msgs.msg import JointState
-from math import cos, sin, atan, radians, sqrt, pi, acos
+from math import cos, sin, atan, radians, sqrt, pi, acos, degrees
 
 
 class YouBot(object):
@@ -237,8 +237,9 @@ class Arm(object):
         возвращает углы поворота осей в радианах
         """
         joints_angles = _joints_angles_for_pose(x, y, z, w, ori, elbow)
-        if _check_pose(joints_angles, x, y, z):
+        if _check_pose(joints_angles, x, y, z, w, ori):
             self.set_joints_angles(*joints_angles)
+            print 'ok'
         else:
             print 'Woops!'
 
@@ -294,14 +295,17 @@ class Gripper(object):
 
 def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     u"""Просчитывает положения степеней подвижности для заданного положения."""
+    x = float(x)
+    y = float(y)
+    z = float(z)
+    w = float(w)
+
     def calculate_joint1_value(x, y, ori):
         u"""Расчет первой степени подвижности."""
         if ori == 0:
             # 1. ориентация плечо вперед
-            if y == 0 and x >= 0:
+            if y == 0 and x == 0:
                 joint1_value = 0
-            elif y == 0 and x < 0:
-                joint1_value = pi
             elif x == 0 and y > 0:
                 joint1_value = -pi / 2
             elif x == 0 and y < 0:
@@ -310,13 +314,11 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
                 joint1_value = -atan(y / x)
             elif x < 0 and y > 0:
                 joint1_value = -atan(y / x) - pi
-            elif x < 0 and y < 0:
+            elif x < 0 and y <= 0:
                 joint1_value = -atan(y / x) + pi
         else:
             # 2. ориентация плечо назад
-            if y == 0 and x > 0:
-                joint1_value = pi
-            elif y == 0 and x <= 0:
+            if y == 0 and x == 0:
                 joint1_value = 0
             elif x == 0 and y > 0:
                 joint1_value = pi / 2
@@ -399,7 +401,6 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
             joint4_valuel = -1 * radians(w) - joint2_value - joint3_value
 
         if joint4_valuel > pi:
-            # перевод угла в формат от -pi до pi
             joint4_value = joint4_valuel - 2 * pi
         elif joint4_valuel < - pi:
             joint4_value = joint4_valuel + 2 * pi
@@ -416,6 +417,7 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     joint5_rotation = 0  # Degrees
     # Calculating joints values
     joint1_value = calculate_joint1_value(x, y, ori)
+    #TODO: всунуть joint3_value в инструкцию try
     joint3_value = calculate_joint3_value(x, y, z, w, ori, elbow, joint1_value)
     joint2_value = calculate_joint2_value(x, y, z, w, ori, joint1_value,
                                           joint3_value)
@@ -445,13 +447,49 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     return result
 
 
-def _joints_positions_to_cartesian(joint_1, joint_2, joint_3, joint_4, joint_5):
-    u"""Прямая задача кинематики."""
-    x_calc = cos(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33)
-    y_calc = -sin(joint_1) * (217.5 * sin(joint_2 + joint_3 + joint_4) + 135 * sin(joint_2 + joint_3) + 155 * sin(joint_2) + 33)
-    z_calc = 217.5 * cos(joint_2 + joint_3 + joint_4) + 135 * cos(joint_2 + joint_3) + 155 * cos(joint_2) + 147
-    """Переводит обобщенные координты в декартовы"""
-    return x_calc, y_calc, z_calc
+def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, joint_5):
+    u"""
+    Прямая задача кинематики.
+
+    Переводит обобщенные координты в декартовы
+    """
+    joint1_correction = radians(169) - 0.0100693
+    joint2_correction = radians(65) - 0.0100693
+    joint3_correction = radians(-146) + 0.015708
+    joint4_correction = radians(102.5) - 0.0221239
+    joint1_candle = joint_1 - joint1_correction
+    joint2_candle = joint_2 - joint2_correction
+    joint3_candle = joint_3 - joint3_correction
+    joint4_candle = joint_4 - joint4_correction
+    x_calc = cos(joint1_candle) * (217.5 * sin(joint2_candle + joint3_candle + joint4_candle) + 135 * sin(joint2_candle + joint3_candle) + 155 * sin(joint2_candle) + 33)
+    y_calc = -sin(joint1_candle) * (217.5 * sin(joint2_candle + joint3_candle + joint4_candle) + 135 * sin(joint2_candle + joint3_candle) + 155 * sin(joint2_candle) + 33)
+    z_calc = 217.5 * cos(joint2_candle + joint3_candle + joint4_candle) + 135 * cos(joint2_candle + joint3_candle) + 155 * cos(joint2_candle) + 147
+    w_calc = joint2_candle + joint3_candle + joint4_candle
+    if w_calc > pi:
+        w_calc = w_calc - 2 * pi
+    elif w_calc < - pi:
+        w_calc = w_calc + 2 * pi
+    else:
+        w_calc = w_calc
+
+    if ori == 0:
+        w_calc = w_calc
+    else:
+        w_calc = - w_calc
+
+    x_calc = round(x_calc, 1)
+    y_calc = round(y_calc, 1)
+    z_calc = round(z_calc, 1)
+    w_calc = round(degrees(w_calc), 1)
+
+    joint_1d = round(degrees(joint1_candle), 4)
+    joint_2d = round(degrees(joint2_candle), 4)
+    joint_3d = round(degrees(joint3_candle), 4)
+    joint_4d = round(degrees(joint4_candle), 4)
+    print joint_1d, joint_2d, joint_3d, joint_4d
+    print x_calc, y_calc, z_calc, w_calc
+
+    return x_calc, y_calc, z_calc, w_calc
 
 
 def _calculate_angular_velocity(current, goal):
@@ -486,17 +524,21 @@ def _transform_coordinates(xwp, ywp, xwr, ywr, phir):
     return xyp, yyp
 
 
-def _check_pose(q, x, y, z):
+def _check_pose(q, x, y, z, w, ori):
     u"""Проверяет заданное положение манипулятора."""
-    if (0.0100692 <= q[0] <= 5.84014 and
-        0.0100692 <= q[1] <= 2.61799 and
-        -5.0221239 <= q[2] <= -0.015708 and
-        0.0221239 <= q[3] <= 3.4292 and
-        0.1106200 <= q[4] <= 5.64159):
-        if not(z < 0 and x < 150 and -150 < y < 150):
-            # ограничения размера тележки
-            return True
-        else:
-            return False
+
+    x = round(x, 1)
+    y = round(y, 1)
+    z = round(z, 1)
+    w = round(w, 1)
+    axis_ok = (0.0100692 <= q[0] <= 5.84014 and
+               0.0100692 <= q[1] <= 2.61799 and
+               -5.0221239 <= q[2] <= -0.015708 and
+               0.0221239 <= q[3] <= 3.4292 and
+               0.1106200 <= q[4] <= 5.64159)
+    platform_ok = not(z < 30 and x < 150 and -150 < y < 150)
+    kinematic_ok = (x, y, z, w) == _joints_positions_to_cartesian(ori, *q)
+    if (axis_ok and platform_ok and kinematic_ok):
+        return True
     else:
         return False
