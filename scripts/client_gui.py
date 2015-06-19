@@ -364,9 +364,9 @@ class AutomaticControls(ttk.Frame):
                    text=u'Стоп',
                    width=9).grid(column=0, row=4)
         # Up button
-        ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
+        ttk.Button(self, text=u'Вверх', command=self.moveup).grid(column=0, row=2)
         # Down button
-        ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
+        ttk.Button(self, text=u'Вниз', command=self.movedown).grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
         for child in self.buttons_frame.winfo_children():
@@ -398,6 +398,24 @@ class AutomaticControls(ttk.Frame):
                 R1.base.set_velocity(0, 0, 0)
             elif name.startswith('Arm'):
                 R1.arm.ptp(POINTS_DICT[name])
+
+    def moveup(self):
+        index = int(self.points_list.curselection()[0])
+        points = listbox_to_list(self.pt_list.get())
+        if index >= 1:
+            item = points.pop(index)
+            points.insert(index-1, item)
+        listbox_string = ' '.join(points)
+        self.pt_list.set(listbox_string)
+
+    def movedown(self):
+        index = int(self.points_list.curselection()[0])
+        points = listbox_to_list(self.pt_list.get())
+        if index <= len(points)-1:
+            item = points.pop(index)
+            points.insert(index+1, item)
+        listbox_string = ' '.join(points)
+        self.pt_list.set(listbox_string)
 
 
 class BaseMotionAddition(tk.Toplevel):
