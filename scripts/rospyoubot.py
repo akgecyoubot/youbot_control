@@ -230,18 +230,20 @@ class Arm(object):
         """Return list of current joints angles."""
         return self.current_joints_states.position[:5]
 
-    def ptp(self, x, y, z, w, ori, elbow):
+    def ptp(self, joints):
         u"""Передвигает манипулятор в заданную точку пространства.
 
         Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-        joints_angles = _joints_angles_for_pose(x, y, z, w, ori, elbow)
-        if _check_pose(joints_angles, x, y, z, w, ori):
-            self.set_joints_angles(*joints_angles)
-            print 'ok'
-        else:
-            print 'Woops!'
+        goal = [round(x,3) for x in joints]
+        current = [round(x,3) for x in self.get_current_joints_positions()]
+        condition = goal != current
+        while condition and not rospy.is_shutdown():
+            print goal, ' | ', current
+            self.set_joints_angles(*goal)
+            current = [round(x,3) for x in self.get_current_joints_positions()]
+            condition = goal != current
 
 
 class Gripper(object):
@@ -298,7 +300,7 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     x = float(x)
     y = float(y)
     z = float(z)
-    w = float(w)
+    w = degrees(float(w))
 
     def calculate_joint1_value(x, y, ori):
         u"""Расчет первой степени подвижности."""
@@ -444,6 +446,12 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     for index, value in enumerate(joints_values):
         correction = joints_correction[index]
         result.append(value + correction)
+    if not (0.0100692 <= result[0] <= 5.84014 and
+            0.0100692 <= result[1] <= 2.61799 and
+            -5.0221239 <= result[2] <= -0.015708 and
+            0.0221239 <= result[3] <= 3.4292 and
+            0.1106200 <= result[4] <= 5.64159):
+        raise ValueError
     return result
 
 
@@ -480,7 +488,8 @@ def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, join
     x_calc = round(x_calc, 1)
     y_calc = round(y_calc, 1)
     z_calc = round(z_calc, 1)
-    w_calc = round(degrees(w_calc), 1)
+    w_calc = round(w_calc, 1)
+    o_calc = round(joint_5, 1)
 
     joint_1d = round(degrees(joint1_candle), 4)
     joint_2d = round(degrees(joint2_candle), 4)
@@ -489,7 +498,7 @@ def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, join
     print joint_1d, joint_2d, joint_3d, joint_4d
     print x_calc, y_calc, z_calc, w_calc
 
-    return x_calc, y_calc, z_calc, w_calc
+    return x_calc, y_calc, z_calc, w_calc, o_calc
 
 
 def _calculate_angular_velocity(current, goal):

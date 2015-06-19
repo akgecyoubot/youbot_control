@@ -392,12 +392,12 @@ class AutomaticControls(ttk.Frame):
     def start(self):
         u"""Запускает выполнение программы движения робота."""
         for name in listbox_to_list(self.pt_list.get()):
-            message = "Goint to point {}, with coordinates {}"
-            message = message.format(name, POINTS_DICT[name])
-            print message
-            R1.base.set_velocity(0, 0, 0)
-            R1.base.lin(*POINTS_DICT[name])
-            R1.base.set_velocity(0, 0, 0)
+            if name.startswith('Base'):
+                R1.base.set_velocity(0, 0, 0)
+                R1.base.lin(*POINTS_DICT[name])
+                R1.base.set_velocity(0, 0, 0)
+            elif name.startswith('Arm'):
+                R1.arm.ptp(POINTS_DICT[name])
 
 
 class BaseMotionAddition(tk.Toplevel):
@@ -607,8 +607,25 @@ class ArmMotionAddition(tk.Toplevel):
     def save(self):
         u"""Save arm position to points list."""
         if self.input_is_valid():
-            # Add point to points list
-            self.destroy()
+            points_list = listbox_to_list(self.parent.pt_list.get())
+            name = 'Arm:{}'.format(self.point_name.get())
+            x = self.X.get()
+            y = self.Y.get()
+            z = self.Z.get()
+            w = self.W.get()
+            ori = self.oriset.get()
+            elbow = self.elbow.get()
+            try:
+                point = rospyoubot._joints_angles_for_pose(x, y, z, w, ori,
+                                                           elbow)
+                POINTS_DICT[name] = point
+                points_list.append(name)
+                listbox_string = ' '.join(points_list)
+                self.parent.pt_list.set(listbox_string)
+                self.destroy()
+            except ValueError:
+                tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                    u"Точка недостижима")
         else:
             tkMessageBox.showerror(u"Ошибка добавления точки.",
                                    u"Проверьте поля ввода.")
@@ -619,7 +636,14 @@ class ArmMotionAddition(tk.Toplevel):
 
     def touch_up(self):
         u"""Save current joints angles as point."""
-        pass
+        joints = R1.arm.get_current_joints_positions()
+        x, y, z, w, o = rospyoubot._joints_positions_to_cartesian(self.oriset.get(),
+                                                               *joints)
+        self.X.set(x)
+        self.Y.set(y)
+        self.Z.set(z)
+        self.W.set(w)
+        self.O.set(o)
 
     def cancel(self):
         u"""Закрывает окно, не сохраняя результат."""
@@ -633,8 +657,10 @@ class ArmMotionAddition(tk.Toplevel):
         w_ok = isfloat(self.W.get())
         o_ok = isfloat(self.O.get())
         name = 'Arm:' + self.point_name.get()
+        name_not_empty = self.point_name.get() != ''
         name_ok = name not in POINTS_DICT.keys()
-        everything_ok = x_ok and y_ok and z_ok and w_ok and o_ok and name_ok
+        everything_ok = (x_ok and y_ok and z_ok and w_ok and o_ok and name_ok
+                         and name_not_empty)
         if everything_ok:
             return True
         else:
