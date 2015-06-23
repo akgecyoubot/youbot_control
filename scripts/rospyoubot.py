@@ -40,11 +40,11 @@ class YouBot(object):
         """Stop youBot, and move arm to default position."""
         self.base.set_velocity(0, 0, 0)
         self.arm.set_joints_velocities(0, 0, 0, 0, 0)
-        self.arm.set_joints_angles(0.0100693,
-                                   0.0100693,
-                                   -0.015708,
-                                   0.0221239,
-                                   0.11062)
+        # self.arm.set_joints_angles(0.0100693,
+                                   # 0.0100693,
+                                   # -0.015708,
+                                   # 0.0221239,
+                                   # 0.11062)
 
 
 class Base(object):
@@ -108,13 +108,13 @@ class Base(object):
         return position
 
     # TODO: Make it work with different speeds
-    def lin(self, world_xp, world_yp, goal_ori, speed=0.5):
+    def lin(self, world_xp, world_yp, goal_ori, speed=0.1):
         u"""Move youBot base to the point with coordinate (world_xp, world_yp).
 
         world_xp, world_yp - Coordinates in odometry coordinate system (Meteres)
         goal_ori - Angle between Odometry X axis and robot X axis (Radians)
         """
-        psi = 0.05
+        psi = 0.005
         world_xr, world_yr, current_ori = self.get_odometry()
         # Движение по прямой
         while (abs(world_xp - world_xr) >= psi or abs(world_yp - world_yr) >= psi) and not rospy.is_shutdown():
@@ -236,14 +236,15 @@ class Arm(object):
         Принимает координаты и ориентацию схвата.
         возвращает углы поворота осей в радианах
         """
-        goal = [round(x,3) for x in joints]
-        current = [round(x,3) for x in self.get_current_joints_positions()]
-        condition = goal != current
-        while condition and not rospy.is_shutdown():
+        goal = [round(x,1) for x in joints]
+        current = [round(x,1) for x in self.get_current_joints_positions()]
+        self.set_joints_angles(*joints)
+        rate = rospy.Rate(1)
+        for _ in xrange(3):
             print goal, ' | ', current
-            self.set_joints_angles(*goal)
-            current = [round(x,3) for x in self.get_current_joints_positions()]
-            condition = goal != current
+            current = self.get_current_joints_positions()
+            current = [round(x,1) for x in current]
+            rate.sleep()
 
 
 class Gripper(object):
@@ -300,7 +301,7 @@ def _joints_angles_for_pose(x, y, z, w, ori, elbow):
     x = float(x)
     y = float(y)
     z = float(z)
-    w = degrees(float(w))
+    w = float(w)
 
     def calculate_joint1_value(x, y, ori):
         u"""Расчет первой степени подвижности."""
@@ -488,7 +489,7 @@ def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, join
     x_calc = round(x_calc, 1)
     y_calc = round(y_calc, 1)
     z_calc = round(z_calc, 1)
-    w_calc = round(w_calc, 1)
+    w_calc = round(degrees(w_calc), 1)
     o_calc = round(joint_5, 1)
 
     joint_1d = round(degrees(joint1_candle), 4)
@@ -504,9 +505,10 @@ def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, join
 def _calculate_angular_velocity(current, goal):
     u"""Calculate angular velocity to change current orientation to goal."""
     if current > goal:
-        return -1
+        return (goal - current) if (goal - current) < 1 else -1
     elif current < goal:
-        return 1
+        return (goal - current) if (goal - current) < 1 else 1
+
     else:
         return 0
 

@@ -6,6 +6,7 @@ import Tkinter as tk
 import ttk
 import tkMessageBox
 import rospyoubot
+from math import degrees
 
 
 class MainApplication(ttk.Frame):
@@ -122,11 +123,11 @@ class JointsControlsFrame(ttk.LabelFrame):
 
     def go_home(self, *args):
         u"""Отправляет манипулятор в домашнюю позицию."""
-        R1.arm.set_joints_angles(0.0100693,
-                                 0.0100693,
-                                 -0.015708,
-                                 0.0221239,
-                                 0.11062)
+        R1.arm.set_joints_angles(0.016,
+                                 0.04,
+                                 -0.072,
+                                 0.0432,
+                                 2.839)
 
     def go_candle(self, *args):
         u"""Приводит манипулятор в положение свечки."""
@@ -336,33 +337,43 @@ class AutomaticControls(ttk.Frame):
         self.add_base_button = ttk.Button(self.buttons_frame,
                                           text=u'Платформа',
                                           width=9)
-        self.add_base_button.grid(column=0, row=0)
+        self.add_base_button.grid(column=0, row=0, columnspan=2)
         self.add_base_button.bind('<Button-1>', self.add_to_list)
         # Add arm button
         self.add_arm_button = ttk.Button(self.buttons_frame,
                                          text=u'Манипулятор',
                                          width=9)
-        self.add_arm_button.grid(column=0, row=1)
+        self.add_arm_button.grid(column=0, row=1, columnspan=2)
         self.add_arm_button.bind('<Button-1>', self.add_arm_point)
         # Edit button
         # ttk.Button(self.buttons_frame,
         # text=u'Редактировать',
         # width=9).grid(column=0, row=1)
         # Remove button
+        self.grip_open_button = ttk.Button(self.buttons_frame,
+                                        text=u'Откр',
+                                        width=3)
+        self.grip_open_button.grid(column=0, row=2)
+        self.grip_open_button.bind('<Button-1>', self.open_gripper)
+        self.grip_close_button = ttk.Button(self.buttons_frame,
+                                        text=u'Закр',
+                                        width=3)
+        self.grip_close_button.grid(column=1, row=2)
+        self.grip_close_button.bind('<Button-1>', self.close_gripper)
         self.remove_button = ttk.Button(self.buttons_frame,
                                         text=u'Удалить',
                                         width=9)
-        self.remove_button.grid(column=0, row=2)
+        self.remove_button.grid(column=0, row=3, columnspan=2)
         self.remove_button.bind('<Button-1>', self.remove_point)
         # Start button
         ttk.Button(self.buttons_frame,
                    text=u'Старт',
                    width=9,
-                   command=self.start).grid(column=0, row=3)
+                   command=self.start).grid(column=0, row=4, columnspan=2)
         # Stop button
         ttk.Button(self.buttons_frame,
                    text=u'Стоп',
-                   width=9).grid(column=0, row=4)
+                   width=9).grid(column=0, row=5, columnspan=2)
         # Up button
         ttk.Button(self, text=u'Вверх', command=self.moveup).grid(column=0, row=2)
         # Down button
@@ -416,6 +427,12 @@ class AutomaticControls(ttk.Frame):
             points.insert(index+1, item)
         listbox_string = ' '.join(points)
         self.pt_list.set(listbox_string)
+
+    def close_gripper(self, *args):
+        pass
+
+    def open_gripper(self, *args):
+        pass
 
 
 class BaseMotionAddition(tk.Toplevel):
@@ -526,7 +543,7 @@ class ArmMotionAddition(tk.Toplevel):
         # Coordinates
         coordinates = ttk.LabelFrame(frame,
                                      text=u"Введите координаты и углы ориентации")
-        coordinates.grid(row=0, column=0, sticky='nswe')
+        coordinates.grid(row=0, column=0, columnspan=3, sticky='nswe')
         # X
         self.X = tk.StringVar()
         ttk.Label(coordinates, text=u"X:").grid(row=0, column=0)
@@ -559,7 +576,7 @@ class ArmMotionAddition(tk.Toplevel):
         name_input.grid(row=2, column=3)
         # Configuration
         configuration = ttk.LabelFrame(frame, text=u"Выберите конфигурацию")
-        configuration.grid(row=1, column=0, sticky='nswe')
+        configuration.grid(row=1, column=0, columnspan=3, sticky='nswe')
         self.elbow = tk.IntVar()
         self.oriset = tk.IntVar()
         ttk.Radiobutton(configuration,
@@ -578,39 +595,25 @@ class ArmMotionAddition(tk.Toplevel):
                         text=u"Обратное плечо",
                         variable=self.oriset,
                         value=1).grid(row=1, column=1)
-        # Gripper
-        self.gripper_open = tk.IntVar()
-        gripper = ttk.LabelFrame(frame, text=u"Состояние схвата")
-        gripper.grid(row=1, column=1, sticky='nswe')
-        ttk.Radiobutton(gripper,
-                        text=u"Открыт",
-                        variable=self.gripper_open,
-                        value=1).grid(row=0, column=0)
-        ttk.Radiobutton(gripper,
-                        text=u"Закрыт",
-                        variable=self.gripper_open,
-                        value=0).grid(row=1, column=0)
-        # Touch Up
-        buttons = ttk.Frame(frame)
-        buttons.grid(row=0, column=1)
-        ttk.Button(buttons,
-                   text="Touch Up",
-                   command=self.touch_up).grid(row=0,
-                                               column=0)
-        ttk.Button(buttons,
+        ttk.Button(configuration,
+            text="Текущие координаты",
+            command=self.touch_up).grid(row=0,
+                                               column=2)
+
+        ttk.Button(frame,
                    text="Move Arm",
-                   command=self.move_arm).grid(row=1,
-                                               column=0)
+                   command=self.move_arm).grid(row=2,
+                                               column=1)
         # Save
         ttk.Button(frame,
                    text=u"Сохранить",
                    command=self.save).grid(row=2,
-                                           column=0)
+                                           column=2)
         # Cancel
         ttk.Button(frame,
                    text=u"Отмена",
                    command=self.cancel).grid(row=2,
-                                             column=1)
+                                             column=0)
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
         for child in frame.winfo_children():
@@ -689,17 +692,17 @@ def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
     # Base movement
     if event.char == 'i':
-        R1.base.set_velocity(lin_x=1)
+        R1.base.set_velocity(lin_x=BASE_VELOCITY)
     elif event.char == 'k':
-        R1.base.set_velocity(lin_x=-1)
+        R1.base.set_velocity(lin_x=-BASE_VELOCITY)
     elif event.char == 'j':
-        R1.base.set_velocity(lin_y=1)
+        R1.base.set_velocity(lin_y=BASE_VELOCITY)
     elif event.char == 'l':
-        R1.base.set_velocity(lin_y=-1)
+        R1.base.set_velocity(lin_y=-BASE_VELOCITY)
     elif event.char == 'u':
-        R1.base.set_velocity(ang_z=1)
+        R1.base.set_velocity(ang_z=BASE_VELOCITY)
     elif event.char == 'o':
-        R1.base.set_velocity(ang_z=-1)
+        R1.base.set_velocity(ang_z=-BASE_VELOCITY)
     # Arm movement
     if event.char == 'q':
         R1.arm.set_joints_velocities(1, 0, 0, 0, 0)
@@ -740,7 +743,7 @@ def update_joints_labels():
     for index, value in enumerate(odom):
         ODOMETRY[index].set(round(value, 3))
     for index, value in enumerate(current_joints_positions):
-        ARM_JOINTS_ANGLES[index].set(round(value, 3))
+        ARM_JOINTS_ANGLES[index].set(round(degrees(value), 3))
     ROOT.after(100, update_joints_labels)
 
 
@@ -766,7 +769,7 @@ if __name__ == '__main__':
     ROOT.title("youBot control")
     ROOT.resizable(1, 0)
     ROOT.columnconfigure(0, weight=1)
-    BASE_VELOCITY = 1
+    BASE_VELOCITY = 0.2
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
     ARM_JOINTS_ANGLES = [tk.StringVar() for _ in range(5)]
