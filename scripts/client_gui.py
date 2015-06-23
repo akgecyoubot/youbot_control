@@ -6,7 +6,7 @@ import Tkinter as tk
 import ttk
 import tkMessageBox
 import rospyoubot
-from math import degrees
+from math import radians, degrees
 
 
 class MainApplication(ttk.Frame):
@@ -500,7 +500,7 @@ class BaseMotionAddition(tk.Toplevel):
         y = self.Y.get()
         phi = self.Phi.get()
         if self.input_is_valid(name, x, y, phi):
-            POINTS_DICT[name] = (float(x), float(y), float(phi))
+            POINTS_DICT[name] = (float(x), float(y), radians(float(phi)))
             points_list.append(name)
             listbox_string = ' '.join(points_list)
             self.parent.pt_list.set(listbox_string)
@@ -514,7 +514,7 @@ class BaseMotionAddition(tk.Toplevel):
         odometry = R1.base.get_odometry()
         self.X.insert(0, odometry[0])
         self.Y.insert(0, odometry[1])
-        self.Phi.insert(0, odometry[2])
+        self.Phi.insert(0, degrees(odometry[2]))
 
     def input_is_valid(self, name, x, y, phi):
         u"""Check input data for validity."""
