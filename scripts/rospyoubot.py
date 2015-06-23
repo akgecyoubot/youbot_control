@@ -108,13 +108,13 @@ class Base(object):
         return position
 
     # TODO: Make it work with different speeds
-    def lin(self, world_xp, world_yp, goal_ori, speed=0.5):
+    def lin(self, world_xp, world_yp, goal_ori, speed=0.2):
         u"""Move youBot base to the point with coordinate (world_xp, world_yp).
 
         world_xp, world_yp - Coordinates in odometry coordinate system (Meteres)
         goal_ori - Angle between Odometry X axis and robot X axis (Radians)
         """
-        psi = 0.05
+        psi = 0.025
         world_xr, world_yr, current_ori = self.get_odometry()
         # Движение по прямой
         while (abs(world_xp - world_xr) >= psi or abs(world_yp - world_yr) >= psi) and not rospy.is_shutdown():
@@ -503,12 +503,22 @@ def _joints_positions_to_cartesian(ori, joint_1, joint_2, joint_3, joint_4, join
 
 def _calculate_angular_velocity(current, goal):
     u"""Calculate angular velocity to change current orientation to goal."""
+    '''
     if current > goal:
         return -1
     elif current < goal:
         return 1
     else:
         return 0
+    '''
+    d = goal - current
+    if abs(d) >= 0.8:
+        angular_vel = 0.8 * (d / abs(d))
+    if 0.1 < abs(d) < 0.8:
+        angular_vel = d
+    if abs(d) <= 0.1:
+        angular_vel = 0.1 * (d / abs(d))
+    return angular_vel
 
 
 def _calculate_velocity(*args):  # TODO: remove *args
@@ -519,6 +529,13 @@ def _calculate_velocity(*args):  # TODO: remove *args
         multiplier = 1 / sqrt(pow(args[0], 2) + pow(args[1], 2))
     except ZeroDivisionError:
         multiplier = 0
+    d = sqrt(pow(args[0], 2) + pow(args[1], 2))
+    if d >= 0.8:
+        multiplier *= (0.8 * (d / abs(d)))
+    elif 0.1 < d < 0.8:
+        multiplier *= (d * (d / abs(d)))
+    elif d <= 0.1:
+        multiplier *= (0.1 * (d / abs(d)))
     velocity += (args[0] * multiplier),
     velocity += (args[1] * multiplier),
     return velocity
