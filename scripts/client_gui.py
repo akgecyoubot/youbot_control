@@ -4,8 +4,9 @@
 
 import Tkinter as tk
 import ttk
+import tkMessageBox
 import rospyoubot
-
+from math import radians, degrees
 
 
 class MainApplication(ttk.Frame):
@@ -31,6 +32,7 @@ class MainApplication(ttk.Frame):
                           text='Автоматическое управление',
                           sticky='nswe')
 
+
 class ControlsPage(ttk.Frame):
 
     u"""Вкладка управления."""
@@ -40,21 +42,19 @@ class ControlsPage(ttk.Frame):
         ttk.Frame.__init__(self, parent)
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
-        #
+        # Arm joints controls
         self.joints_controls = JointsControlsFrame(self)
-        self.joints_controls.grid(column=1, row=0, rowspan=2, sticky='nswe')
-        #
-        self.joints_controls = CurrentPositionFrame(self)
-        self.joints_controls.grid(column=1, row=2, sticky='nswe')
-        #
+        self.joints_controls.grid(column=1, row=0, sticky='nswe')
+        # Odometry
         self.odometry = OdometryFrame(self)
-        self.odometry.grid(column=0, row=1, rowspan=1, sticky='nswe')
-        #
+        self.odometry.grid(column=1, row=1, sticky='nswe')
+        # Base controls
         self.base_control = BaseControl(self)
-        self.base_control.grid(column=0, row=0, sticky='nswe')
-        #
+        self.base_control.grid(column=1, row=2, sticky='nswe')
+        # Padding
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
 
 class OdometryFrame(ttk.LabelFrame):
 
@@ -90,6 +90,7 @@ class OdometryFrame(ttk.LabelFrame):
         for child in self.winfo_children():
             child.grid_configure(padx=2, pady=2)
 
+
 class JointsControlsFrame(ttk.LabelFrame):
 
     u"""Фрейм управления степенями подвижности."""
@@ -122,11 +123,11 @@ class JointsControlsFrame(ttk.LabelFrame):
 
     def go_home(self, *args):
         u"""Отправляет манипулятор в домашнюю позицию."""
-        R1.arm.set_joints_angles(0.0100693,
-                                 0.0100693,
-                                 -0.015708,
-                                 0.0221239,
-                                 0.11062)
+        R1.arm.set_joints_angles(0.016,
+                                 0.04,
+                                 -0.072,
+                                 0.0432,
+                                 2.839)
 
     def go_candle(self, *args):
         u"""Приводит манипулятор в положение свечки."""
@@ -135,6 +136,7 @@ class JointsControlsFrame(ttk.LabelFrame):
                                  -2.5235000069592695,
                                  1.769468876296561,
                                  2.838871440356912)
+
 
 class JointControl(ttk.Frame):
 
@@ -149,7 +151,7 @@ class JointControl(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.joint = joint
         self.label = 'A{}:'.format(joint)
-        self.angle = tk.StringVar()     # Эта строчка видимо лишняя
+        self.angle = tk.StringVar()
         ttk.Label(self, text=self.label, width=6, anchor='e').grid(column=0,
                                                                    row=0,
                                                                    sticky=tk.E)
@@ -169,31 +171,16 @@ class JointControl(ttk.Frame):
 
     def plus_button_press(self, *args):
         u"""Задаёт скорость оси, при нажатии на кнопку '+'."""
-        arm_velocities = [ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
+        vel = ARM_VELOCITY
+        arm_velocities = [vel if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
 
     def minus_button_press(self, *args):
         u"""Задаёт скорость оси, при нажатии на кнопку '-'."""
-        arm_velocities = [-ARM_VELOCITY if x == self.joint - 1 else 0 for x in range(5)]
+        vel = -1 * ARM_VELOCITY
+        arm_velocities = [vel if x == self.joint - 1 else 0 for x in range(5)]
         R1.arm.set_joints_velocities(*arm_velocities)
 
-class CurrentPositionFrame(ttk.LabelFrame):
-    def __init__(self, parent):
-        ttk.LabelFrame.__init__(self, parent, text='Координаты схвата в СК базы:')
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.AXIS_POSITION = (tk.StringVar)
-
-        ttk.Label(self, text='X:', width=6, anchor='e').grid(column=0, row=0)
-        ttk.Label(self, text='Y:', width=6, anchor='e').grid(column=0, row=1)
-        ttk.Label(self, text='Z:', width=6, anchor='e').grid(column=0, row=2)
-
-        self.x_value = ttk.Label(self, textvariable=self.AXIS_POSITION[0], width=10, anchor='center')
-        self.x_value.grid(column=1, row=0)
-        self.y_value = ttk.Label(self, textvariable=self.AXIS_POSITION[1], width=10, anchor='center')
-        self.y_value.grid(column=1, row=1)
-        self.z_value = ttk.Label(self, textvariable=self.AXIS_POSITION[2], width=10, anchor='center')
-        self.z_value.grid(column=1, row=2)
 
 class BaseControl(ttk.LabelFrame):
 
@@ -208,32 +195,50 @@ class BaseControl(ttk.LabelFrame):
         controls_style = ttk.Style()
         controls_style.configure('base.TButton', font=('TkDefaultFont', 20))
         # Rotate left
-        self.rl_button = ttk.Button(self, text=u'\u21b6', width=2, style='base.TButton')
+        self.rl_button = ttk.Button(self,
+                                    text=u'\u21b6',
+                                    width=2,
+                                    style='base.TButton')
         self.rl_button.grid(column=0, row=0, sticky=tk.SE)
         self.rl_button.bind('<Button-1>', self.rl_button_press)
         self.rl_button.bind('<ButtonRelease-1>', key_released)
         # Forward
-        self.f_button = ttk.Button(self, text=u'\u2191', width=2, style='base.TButton')
+        self.f_button = ttk.Button(self,
+                                   text=u'\u2191',
+                                   width=2,
+                                   style='base.TButton')
         self.f_button.grid(column=1, row=0, sticky=tk.S)
         self.f_button.bind('<Button-1>', self.f_button_press)
         self.f_button.bind('<ButtonRelease-1>', key_released)
         # Rotate right
-        self.rr_button = ttk.Button(self, text=u'\u21b7', width=2, style='base.TButton')
+        self.rr_button = ttk.Button(self,
+                                    text=u'\u21b7',
+                                    width=2,
+                                    style='base.TButton')
         self.rr_button.grid(column=2, row=0, sticky=tk.SW)
         self.rr_button.bind('<Button-1>', self.rr_button_press)
         self.rr_button.bind('<ButtonRelease-1>', key_released)
         # Left
-        self.l_button = ttk.Button(self, text=u'\u2190', width=2, style='base.TButton')
+        self.l_button = ttk.Button(self,
+                                   text=u'\u2190',
+                                   width=2,
+                                   style='base.TButton')
         self.l_button.grid(column=0, row=1, sticky=tk.NE)
         self.l_button.bind('<Button-1>', self.l_button_press)
         self.l_button.bind('<ButtonRelease-1>', key_released)
         # Backwards
-        self.b_button = ttk.Button(self, text=u'\u2193', width=2, style='base.TButton')
+        self.b_button = ttk.Button(self,
+                                   text=u'\u2193',
+                                   width=2,
+                                   style='base.TButton')
         self.b_button.grid(column=1, row=1, sticky=tk.N)
         self.b_button.bind('<Button-1>', self.b_button_press)
         self.b_button.bind('<ButtonRelease-1>', key_released)
         # Right
-        self.r_button = ttk.Button(self, text=u'\u2192', width=2, style='base.TButton')
+        self.r_button = ttk.Button(self,
+                                   text=u'\u2192',
+                                   width=2,
+                                   style='base.TButton')
         self.r_button.grid(column=2, row=1, sticky=tk.NW)
         self.r_button.bind('<Button-1>', self.r_button_press)
         self.r_button.bind('<ButtonRelease-1>', key_released)
@@ -264,6 +269,7 @@ class BaseControl(ttk.LabelFrame):
         u"""Обрабатыевает нажатие на кнопку RR."""
         R1.base.set_velocity(ang_z=-BASE_VELOCITY)
 
+
 class GripperControl(ttk.Frame):
 
     u"""Фрейм управления гриппером."""
@@ -276,9 +282,12 @@ class GripperControl(ttk.Frame):
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
         self.gripper_state = tk.StringVar()
-        ttk.Label(self, text='Схват:', width=6, anchor='e').grid(column=0,
-                                                                 row=0,
-                                                                 sticky='e')
+        ttk.Label(self,
+                  text='Схват:',
+                  width=6,
+                  anchor='e').grid(column=0,
+                                   row=0,
+                                   sticky='e')
         self.close_button = ttk.Button(self, text='Закрыть', width=7)
         self.close_button.grid(column=1, row=0)
         self.close_button.bind('<Button-1>', self.close_gripper)
@@ -300,6 +309,7 @@ class GripperControl(ttk.Frame):
         self.gripper_state.set('Открыт')
         R1.arm.gripper.set_gripper_state(True)
 
+
 class AutomaticControls(ttk.Frame):
 
     u"""Фрейм автоматического управления."""
@@ -310,8 +320,9 @@ class AutomaticControls(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.pt_list = tk.StringVar()
+        # Points Listbox
         self.points_list = tk.Listbox(self,
-                                      height=26,
+                                      height=29,
                                       selectmode='browse',
                                       listvariable=self.pt_list)
         self.points_list.grid(column=0,
@@ -319,114 +330,379 @@ class AutomaticControls(ttk.Frame):
                               sticky='nswe',
                               rowspan=2,
                               columnspan=2)
+        # Buttons frame
         self.buttons_frame = ttk.Frame(self)
         self.buttons_frame.grid(column=2, row=0, sticky='n')
-        self.add_button = ttk.Button(self.buttons_frame,
-                                     text=u'Добавить',
-                                     width=7)
-        self.add_button.grid(column=0, row=0)
-        self.add_button.bind('<Button-1>', self.add_to_list)
-        ttk.Button(self.buttons_frame,
-                   text=u'Редактировать',
-                   width=7).grid(column=0, row=1)
+        # Add base button
+        self.add_base_button = ttk.Button(self.buttons_frame,
+                                          text=u'Платформа',
+                                          width=9)
+        self.add_base_button.grid(column=0, row=0, columnspan=2)
+        self.add_base_button.bind('<Button-1>', self.add_to_list)
+        # Add arm button
+        self.add_arm_button = ttk.Button(self.buttons_frame,
+                                         text=u'Манипулятор',
+                                         width=9)
+        self.add_arm_button.grid(column=0, row=1, columnspan=2)
+        self.add_arm_button.bind('<Button-1>', self.add_arm_point)
+        # Edit button
+        # ttk.Button(self.buttons_frame,
+        # text=u'Редактировать',
+        # width=9).grid(column=0, row=1)
+        # Remove button
+        self.grip_open_button = ttk.Button(self.buttons_frame,
+                                        text=u'Откр',
+                                        width=3)
+        self.grip_open_button.grid(column=0, row=2)
+        self.grip_open_button.bind('<Button-1>', self.open_gripper)
+        self.grip_close_button = ttk.Button(self.buttons_frame,
+                                        text=u'Закр',
+                                        width=3)
+        self.grip_close_button.grid(column=1, row=2)
+        self.grip_close_button.bind('<Button-1>', self.close_gripper)
         self.remove_button = ttk.Button(self.buttons_frame,
                                         text=u'Удалить',
-                                        width=7)
-        self.remove_button.grid(column=0, row=2)
+                                        width=9)
+        self.remove_button.grid(column=0, row=3, columnspan=2)
         self.remove_button.bind('<Button-1>', self.remove_point)
-        ttk.Button(self, text=u'Вниз').grid(column=0, row=2)
-        ttk.Button(self, text=u'Вверх').grid(column=1, row=2)
+        # Start button
+        ttk.Button(self.buttons_frame,
+                   text=u'Старт',
+                   width=9,
+                   command=self.start).grid(column=0, row=4, columnspan=2)
+        # Stop button
+        ttk.Button(self.buttons_frame,
+                   text=u'Стоп',
+                   width=9).grid(column=0, row=5, columnspan=2)
+        # Up button
+        ttk.Button(self, text=u'Вверх', command=self.moveup).grid(column=0, row=2)
+        # Down button
+        ttk.Button(self, text=u'Вниз', command=self.movedown).grid(column=1, row=2)
         for child in self.winfo_children():
             child.grid_configure(padx=5, pady=5)
         for child in self.buttons_frame.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
-    def add_to_list(self, *args):
+    def add_to_list(self, event):
         u"""Добавляет движение в список движений."""
-        window = MotionAdditionWindow(self)
-        points = self.pt_list.get()
-        points = points[1:-1]
-        points = points.split()
-        for i in range(len(points)):
-            points[i] = points[i].strip(",'")
-        points.append('New_item')
-        points = ' '.join(points)
-        self.pt_list.set(points)
+        BaseMotionAddition(self)
 
-    def remove_point(self, *args):
+    def add_arm_point(self, event):
+        u"""Span window to add Arm point."""
+        ArmMotionAddition(self)
+
+    def remove_point(self, event):
         u"""Удаляет выбранное движение из списка."""
         if len(self.points_list.curselection()) > 0:
             index = int(self.points_list.curselection()[0])
-            points = self.pt_list.get()
-            points = points[1:-1]
-            points = points.split()
-            for i in range(len(points)):
-                points[i] = points[i].strip(",'")
-            points.pop(index)
-            points = ' '.join(points)
-            self.pt_list.set(points)
+            points = listbox_to_list(self.pt_list.get())
+            POINTS_DICT.pop(points.pop(index))
+            listbox_string = ' '.join(points)
+            self.pt_list.set(listbox_string)
 
-class MotionAdditionWindow(tk.Toplevel):
+    def start(self):
+        u"""Запускает выполнение программы движения робота."""
+        for name in listbox_to_list(self.pt_list.get()):
+            if name.startswith('Base'):
+                R1.base.set_velocity(0, 0, 0)
+                R1.base.lin(*POINTS_DICT[name])
+                R1.base.set_velocity(0, 0, 0)
+            elif name.startswith('Arm'):
+                R1.arm.ptp(POINTS_DICT[name])
+
+    def moveup(self):
+        index = int(self.points_list.curselection()[0])
+        points = listbox_to_list(self.pt_list.get())
+        if index >= 1:
+            item = points.pop(index)
+            points.insert(index-1, item)
+        listbox_string = ' '.join(points)
+        self.pt_list.set(listbox_string)
+
+    def movedown(self):
+        index = int(self.points_list.curselection()[0])
+        points = listbox_to_list(self.pt_list.get())
+        if index <= len(points)-1:
+            item = points.pop(index)
+            points.insert(index+1, item)
+        listbox_string = ' '.join(points)
+        self.pt_list.set(listbox_string)
+
+    def close_gripper(self, *args):
+        pass
+
+    def open_gripper(self, *args):
+        pass
+
+
+class BaseMotionAddition(tk.Toplevel):
 
     u"""Окно добавления движения."""
 
     def __init__(self, parent):
         u"""Инициализация класса."""
         tk.Toplevel.__init__(self, parent)
-        self.title(u'Выбор движения')
+        self.parent = parent
+        self.title(u'Движение платформы')
         self.resizable(0, 0)
-        self.notebook = ttk.Notebook(self)
-        self.notebook.grid(column=0, row=0, sticky='nswe')
-        self.base_motion = BaseMotionAddition(self)
-        self.notebook.add(self.base_motion, text=u'Платформа')
-
-class BaseMotionAddition(ttk.Frame):
-    def __init__(self, parent):
-        ttk.Frame.__init__(self, parent)
-        self.grid(column=0, row=0)
-        ttk.Label(self,
-                  text=u'Имя:').grid(column=0, row=0, sticky='e')
-        ttk.Entry(self).grid(column=1, row=0, sticky='w')
-        ttk.Label(self,
-                  text=u'Тип движения:').grid(column=2, row=0, sticky='e')
-        ttk.Combobox(self).grid(column=3, row=0)
-        ttk.Label(self,
-                  text=u'P1:',
-                  width=3).grid(column=4, row=0, sticky='e')
-        ttk.Entry(self).grid(column=5, row=0, sticky='w')
-        ttk.Button(self, text='Touch Up').grid(column=5, row=1)
-        ttk.Label(self,
-                  text=u'P2:',
-                  width=3).grid(column=6, row=0, sticky='e')
-        ttk.Entry(self).grid(column=7, row=0, sticky='w')
-        ttk.Button(self, text='Touch Up').grid(column=7, row=1)
-        ttk.Button(self, text=u'Сохранить').grid(row=2, column=0)
-        cancel_button = ttk.Button(self,
+        self.frm = ttk.Frame(self)
+        self.frm.grid(column=0, row=0, sticky='nswe')
+        ttk.Label(self.frm,
+                  text=u'Имя точки:').grid(column=0, row=0, sticky='e')
+        # Point's name
+        self.point_name = tk.StringVar()
+        ttk.Entry(self.frm,
+                  textvariable=self.point_name).grid(column=1,
+                                                     row=0,
+                                                     sticky='w')
+        # X coordinate
+        ttk.Label(self.frm,
+                  text=u'X:',
+                  width=3).grid(column=3, row=0, sticky='e')
+        self.X = ttk.Entry(self.frm)
+        self.X.grid(column=4, row=0, sticky='w')
+        # Y coordinate
+        ttk.Label(self.frm,
+                  text=u'Y:',
+                  width=3).grid(column=3, row=1, sticky='e')
+        self.Y = ttk.Entry(self.frm)
+        self.Y.grid(column=4, row=1, sticky='w')
+        # Orientation
+        ttk.Label(self.frm,
+                  text=u'\u03c6:',
+                  width=3).grid(column=3, row=2, sticky='e')
+        self.Phi = ttk.Entry(self.frm)
+        self.Phi.grid(column=4, row=2, sticky='w')
+        # Touch Up! button
+        ttk.Button(self.frm,
+                   text='Touch Up',
+                   command=self.touch_up).grid(column=4, row=3)
+        # Save button
+        save_button = ttk.Button(self.frm, text=u'Сохранить', command=self.save)
+        save_button.grid(row=3, column=0)
+        # Cancel button
+        cancel_button = ttk.Button(self.frm,
                                    text=u'Отмена',
                                    command=self.cancel)
-        cancel_button.grid(row=2, column=1)
-        for child in self.winfo_children():
+        cancel_button.grid(row=3, column=1)
+        for child in self.frm.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
-    def cancel(self, *args):
+    def cancel(self):
         u"""Закрывает окно, не сохраняя результат."""
         self.destroy()
+
+    def save(self):
+        u"""Сохраняет точку в список точек."""
+        points_list = listbox_to_list(self.parent.pt_list.get())
+        name = 'Base:{}'.format(self.point_name.get())
+        x = self.X.get()
+        y = self.Y.get()
+        phi = self.Phi.get()
+        if self.input_is_valid(name, x, y, phi):
+            POINTS_DICT[name] = (float(x), float(y), radians(float(phi)))
+            points_list.append(name)
+            listbox_string = ' '.join(points_list)
+            self.parent.pt_list.set(listbox_string)
+            self.destroy()
+        else:
+            tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                   u"Проверьте поля ввода.")
+
+    def touch_up(self):
+        u"""Записывает текущие координаты базы в поля ввода координат."""
+        odometry = R1.base.get_odometry()
+        self.X.insert(0, odometry[0])
+        self.Y.insert(0, odometry[1])
+        self.Phi.insert(0, degrees(odometry[2]))
+
+    def input_is_valid(self, name, x, y, phi):
+        u"""Check input data for validity."""
+        name_ok = name not in POINTS_DICT.keys()
+        x_ok = isfloat(self.X.get())
+        y_ok = isfloat(self.Y.get())
+        phi_ok = isfloat(self.Phi.get())
+        if name_ok and x_ok and y_ok and phi_ok:
+            return True
+        else:
+            return False
+
+
+class ArmMotionAddition(tk.Toplevel):
+
+    u"""Window that add arm motion to points lists."""
+
+    def __init__(self, parent):
+        u"""Class constructor."""
+        tk.Toplevel.__init__(self, parent)
+        self.parent = parent
+        self.title(u'Движение манипулятора')
+        self.resizable(0, 0)
+        frame = ttk.Frame(self)
+        frame.grid(row=0, column=0, sticky='nswe')
+        # Coordinates
+        coordinates = ttk.LabelFrame(frame,
+                                     text=u"Введите координаты и углы ориентации")
+        coordinates.grid(row=0, column=0, columnspan=3, sticky='nswe')
+        # X
+        self.X = tk.StringVar()
+        ttk.Label(coordinates, text=u"X:").grid(row=0, column=0)
+        x_input = ttk.Entry(coordinates, textvariable=self.X)
+        x_input.grid(row=0, column=1)
+        # Y
+        self.Y = tk.StringVar()
+        ttk.Label(coordinates, text=u"Y:").grid(row=1, column=0)
+        y_input = ttk.Entry(coordinates, textvariable=self.Y)
+        y_input.grid(row=1, column=1)
+        # Z
+        self.Z = tk.StringVar()
+        ttk.Label(coordinates, text=u"Z:").grid(row=2, column=0)
+        z_input = ttk.Entry(coordinates, textvariable=self.Z)
+        z_input.grid(row=2, column=1)
+        # W
+        self.W = tk.StringVar()
+        ttk.Label(coordinates, text=u"W:").grid(row=0, column=2)
+        w_input = ttk.Entry(coordinates, textvariable=self.W)
+        w_input.grid(row=0, column=3)
+        # O
+        self.O = tk.StringVar()
+        ttk.Label(coordinates, text=u"O:").grid(row=1, column=2)
+        o_input = ttk.Entry(coordinates, textvariable=self.O)
+        o_input.grid(row=1, column=3)
+        # Name
+        self.point_name = tk.StringVar()
+        ttk.Label(coordinates, text=u"Имя:").grid(row=2, column=2)
+        name_input = ttk.Entry(coordinates, textvariable=self.point_name)
+        name_input.grid(row=2, column=3)
+        # Configuration
+        configuration = ttk.LabelFrame(frame, text=u"Выберите конфигурацию")
+        configuration.grid(row=1, column=0, columnspan=3, sticky='nswe')
+        self.elbow = tk.IntVar()
+        self.oriset = tk.IntVar()
+        ttk.Radiobutton(configuration,
+                        text=u"Локоть вверх",
+                        variable=self.elbow,
+                        value=0).grid(row=0, column=0)
+        ttk.Radiobutton(configuration,
+                        text=u"Локоть вниз",
+                        variable=self.elbow,
+                        value=1).grid(row=1, column=0)
+        ttk.Radiobutton(configuration,
+                        text=u"Прямое плечо",
+                        variable=self.oriset,
+                        value=0).grid(row=0, column=1)
+        ttk.Radiobutton(configuration,
+                        text=u"Обратное плечо",
+                        variable=self.oriset,
+                        value=1).grid(row=1, column=1)
+        ttk.Button(configuration,
+            text="Текущие координаты",
+            command=self.touch_up).grid(row=0,
+                                               column=2)
+
+        ttk.Button(frame,
+                   text="Move Arm",
+                   command=self.move_arm).grid(row=2,
+                                               column=1)
+        # Save
+        ttk.Button(frame,
+                   text=u"Сохранить",
+                   command=self.save).grid(row=2,
+                                           column=2)
+        # Cancel
+        ttk.Button(frame,
+                   text=u"Отмена",
+                   command=self.cancel).grid(row=2,
+                                             column=0)
+        for child in self.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in frame.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in coordinates.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in configuration.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        for child in gripper.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+
+    def save(self):
+        u"""Save arm position to points list."""
+        if self.input_is_valid():
+            points_list = listbox_to_list(self.parent.pt_list.get())
+            name = 'Arm:{}'.format(self.point_name.get())
+            x = self.X.get()
+            y = self.Y.get()
+            z = self.Z.get()
+            w = self.W.get()
+            ori = self.oriset.get()
+            elbow = self.elbow.get()
+            try:
+                point = rospyoubot._joints_angles_for_pose(x, y, z, w, ori,
+                                                           elbow)
+                POINTS_DICT[name] = point
+                points_list.append(name)
+                listbox_string = ' '.join(points_list)
+                self.parent.pt_list.set(listbox_string)
+                self.destroy()
+            except ValueError:
+                tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                    u"Точка недостижима")
+        else:
+            tkMessageBox.showerror(u"Ошибка добавления точки.",
+                                   u"Проверьте поля ввода.")
+
+    def move_arm(self):
+        u"""Move arm to entered coordinates."""
+        pass
+
+    def touch_up(self):
+        u"""Save current joints angles as point."""
+        joints = R1.arm.get_current_joints_positions()
+        x, y, z, w, o = rospyoubot._joints_positions_to_cartesian(self.oriset.get(),
+                                                               *joints)
+        self.X.set(x)
+        self.Y.set(y)
+        self.Z.set(z)
+        self.W.set(w)
+        self.O.set(o)
+
+    def cancel(self):
+        u"""Закрывает окно, не сохраняя результат."""
+        self.destroy()
+
+    def input_is_valid(self):
+        u"""Check if all inputs are valid."""
+        x_ok = isfloat(self.X.get())
+        y_ok = isfloat(self.Y.get())
+        z_ok = isfloat(self.Z.get())
+        w_ok = isfloat(self.W.get())
+        o_ok = isfloat(self.O.get())
+        name = 'Arm:' + self.point_name.get()
+        name_not_empty = self.point_name.get() != ''
+        name_ok = name not in POINTS_DICT.keys()
+        everything_ok = (x_ok and y_ok and z_ok and w_ok and o_ok and name_ok
+                         and name_not_empty)
+        if everything_ok:
+            return True
+        else:
+            return False
+
 
 def key_pressed(event):
     u"""Обрабатывает нажатие на кнопку клавиатуры."""
     # Base movement
     if event.char == 'i':
-        R1.base.set_velocity(lin_x=1)
+        R1.base.set_velocity(lin_x=BASE_VELOCITY)
     elif event.char == 'k':
-        R1.base.set_velocity(lin_x=-1)
+        R1.base.set_velocity(lin_x=-BASE_VELOCITY)
     elif event.char == 'j':
-        R1.base.set_velocity(lin_y=1)
+        R1.base.set_velocity(lin_y=BASE_VELOCITY)
     elif event.char == 'l':
-        R1.base.set_velocity(lin_y=-1)
+        R1.base.set_velocity(lin_y=-BASE_VELOCITY)
     elif event.char == 'u':
-        R1.base.set_velocity(ang_z=1)
+        R1.base.set_velocity(ang_z=BASE_VELOCITY)
     elif event.char == 'o':
-        R1.base.set_velocity(ang_z=-1)
+        R1.base.set_velocity(ang_z=-BASE_VELOCITY)
     # Arm movement
     if event.char == 'q':
         R1.arm.set_joints_velocities(1, 0, 0, 0, 0)
@@ -453,22 +729,39 @@ def key_pressed(event):
     if event.char == 'g':
         R1.arm.gripper.set_gripper_state(False)
 
+
 def key_released(event):
     u"""Обрабатывает отпускание кнопки клавиатуры."""
     R1.base.set_velocity()
     R1.arm.set_joints_velocities(0, 0, 0, 0, 0)
 
+
 def update_joints_labels():
     u"""бновляет данные о текущем угле поворота осей и одометрии базы."""
     current_joints_positions = list(R1.arm.get_current_joints_positions())
     odom = R1.base.get_odometry()
-    for i in range(3):
-        ODOMETRY[i].set(round(odom[i], 3))
-    for i in range(5):
-        ARM_JOINTS_ANGLES[i].set(round(current_joints_positions[i], 3))
-    for i in range(3):
-        AXIS_POSITION[i].set(round(current_joints_positions[i], 3))
+    for index, value in enumerate(odom):
+        ODOMETRY[index].set(round(value, 3))
+    for index, value in enumerate(current_joints_positions):
+        ARM_JOINTS_ANGLES[index].set(round(degrees(value), 3))
     ROOT.after(100, update_joints_labels)
+
+
+def listbox_to_list(listbox_str):
+    u"""Convert listbox string into list."""
+    string = listbox_str[1:-1]
+    list_from_string = string.split()
+    striped_list = [item.strip(",'") for item in list_from_string]
+    return striped_list
+
+
+def isfloat(string):
+    u"""Return True if string can be converted into float."""
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 if __name__ == '__main__':
@@ -476,12 +769,12 @@ if __name__ == '__main__':
     ROOT.title("youBot control")
     ROOT.resizable(1, 0)
     ROOT.columnconfigure(0, weight=1)
-    BASE_VELOCITY = 1
+    BASE_VELOCITY = 0.2
     ARM_VELOCITY = 1
     R1 = rospyoubot.YouBot()
-    ARM_JOINTS_ANGLES = [tk.StringVar() for i in range(5)]  # с чем связана цифра
-    ODOMETRY = [tk.StringVar() for i in range(3)]
-    AXIS_POSITION = [tk.StringVar() for i in range(3)]
+    ARM_JOINTS_ANGLES = [tk.StringVar() for _ in range(5)]
+    ODOMETRY = [tk.StringVar() for _ in range(3)]
+    POINTS_DICT = {}
     MAINFRAME = MainApplication(ROOT)
     ROOT.update()
     ROOT.minsize(ROOT.winfo_width(), ROOT.winfo_height())

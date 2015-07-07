@@ -8,7 +8,7 @@ import unittest
 
 class BaseTestCase(unittest.TestCase):
     def test_calculateVelocity(self):
-        func = rospyoubot._calculateVelocity
+        func = rospyoubot._calculate_velocity
         cases = {(0, 0): (0, 0),
                  (5, 0): (1, 0),
                  (0, 5): (0, 1),
@@ -23,7 +23,7 @@ class BaseTestCase(unittest.TestCase):
                 self.assertEqual(sqrt(pow(real[0], 2) + pow(real[1], 2)), 1)
 
     def test_transformCoordinates(self):
-        func = rospyoubot._transformCoordinates
+        func = rospyoubot._transform_coordinates
         cases = {(0, 0, 0, 0, 0): (0, 0),
                  (1, 0, 0, 0, 0): (1, 0),
                  (0, 1, 0, 0, 0): (0, 1),
@@ -60,7 +60,7 @@ class BaseTestCase(unittest.TestCase):
                                    expected[1],
                                    places=2)
     def test_calculateAngularVelocity(self):
-        func = rospyoubot._calculateAngularVelocity
+        func = rospyoubot._calculate_angular_velocity
         cases = {(0, 0): (0),
                  (0, 1): (1),
                  (1, 0): (-1),
