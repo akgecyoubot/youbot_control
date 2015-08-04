@@ -1,5 +1,5 @@
 # pybotserver
-My KUKA youBot project. Server side.
+My KUKA youBot contol application.
 
 This is a part of my thesis work.
 
